@@ -51,61 +51,93 @@
 		},
 
 		subscribeQuery: function(query, callbacks){
-			if (typeof this.subscriptions.queries[query] === "undefined") {
-				this.subscriptions.queries[query] = [];
-				this.connection.send(JSON.stringify({
-					"action": "subscribe",
-					"query": query
-				}));
-			}
-			this.subscriptions.queries[query].push(callbacks);
+			var that = this;
+			var func = function(){
+				if (that.connection.readyState === 1) {
+					if (typeof that.subscriptions.queries[query] === "undefined") {
+						that.subscriptions.queries[query] = [];
+						that.connection.send(JSON.stringify({
+							"action": "subscribe",
+							"query": query
+						}));
+					}
+					that.subscriptions.queries[query].push(callbacks);
+					clearInterval(int);
+				}
+			};
+			var int = setInterval(func, 100);
+			func();
 		},
 
 		unsubscribeQuery: function(query, callbacks){
-			if (typeof this.subscriptions.queries[query] === "undefined") {
-				return;
-			}
-			var idx = this.subscriptions.queries[query].indexOf(callbacks);
-			if (idx === -1) {
-				return;
-			}
-			this.subscriptions.queries[query].splice(idx, 1);
-			if (!this.subscriptions.queries[query].length) {
-				delete this.subscriptions.queries[query];
-				this.connection.send(JSON.stringify({
-					"action": "unsubscribe",
-					"query": query
-				}));
-			}
+			var that = this;
+			var func = function(){
+				if (that.connection.readyState === 1) {
+					if (typeof that.subscriptions.queries[query] === "undefined") {
+						return;
+					}
+					var idx = that.subscriptions.queries[query].indexOf(callbacks);
+					if (idx === -1) {
+						return;
+					}
+					that.subscriptions.queries[query].splice(idx, 1);
+					if (!that.subscriptions.queries[query].length) {
+						delete that.subscriptions.queries[query];
+						that.connection.send(JSON.stringify({
+							"action": "unsubscribe",
+							"query": query
+						}));
+					}
+					clearInterval(int);
+				}
+			};
+			var int = setInterval(func, 100);
+			func();
 		},
 
 		subscribeUID: function(name, callbacks){
-			if (typeof this.subscriptions.uids[name] === "undefined") {
-				this.subscriptions.uids[name] = [];
-				this.connection.send(JSON.stringify({
-					"action": "subscribe",
-					"uid": name
-				}));
-			}
-			this.subscriptions.uids[name].push(callbacks);
+			var that = this;
+			var func = function(){
+				if (that.connection.readyState === 1) {
+					if (typeof that.subscriptions.uids[name] === "undefined") {
+						that.subscriptions.uids[name] = [];
+						that.connection.send(JSON.stringify({
+							"action": "subscribe",
+							"uid": name
+						}));
+					}
+					that.subscriptions.uids[name].push(callbacks);
+					clearInterval(int);
+				}
+			};
+			var int = setInterval(func, 100);
+			func();
 		},
 
 		unsubscribeUID: function(name, callbacks){
-			if (typeof this.subscriptions.uids[name] === "undefined") {
-				return;
-			}
-			var idx = this.subscriptions.uids[name].indexOf(callbacks);
-			if (idx === -1) {
-				return;
-			}
-			this.subscriptions.uids[name].splice(idx, 1);
-			if (!this.subscriptions.uids[name].length) {
-				delete this.subscriptions.uids[name];
-				this.connection.send(JSON.stringify({
-					"action": "unsubscribe",
-					"uid": name
-				}));
-			}
+			var that = this;
+			var func = function(){
+				if (that.connection.readyState === 1) {
+					if (typeof that.subscriptions.uids[name] === "undefined") {
+						return;
+					}
+					var idx = that.subscriptions.uids[name].indexOf(callbacks);
+					if (idx === -1) {
+						return;
+					}
+					that.subscriptions.uids[name].splice(idx, 1);
+					if (!that.subscriptions.uids[name].length) {
+						delete that.subscriptions.uids[name];
+						that.connection.send(JSON.stringify({
+							"action": "unsubscribe",
+							"uid": name
+						}));
+					}
+					clearInterval(int);
+				}
+			};
+			var int = setInterval(func, 100);
+			func();
 		}
 	};
 

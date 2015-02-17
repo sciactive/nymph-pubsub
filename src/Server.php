@@ -18,7 +18,7 @@ class Server implements MessageComponentInterface {
         // Store the new connection to send messages to later
         $this->clients->attach($conn);
 
-        echo "New connection! ({$conn->resourceId})\n";
+        echo "Client joined the party! ({$conn->resourceId})\n";
 	}
 
 	public function onMessage(ConnectionInterface $from, $msg) {
@@ -65,8 +65,14 @@ class Server implements MessageComponentInterface {
 							return;
 						}
 						foreach ($this->subscriptions['queries'][$serialArgs] as $key => $value) {
+							if ($key === 'current') {
+								continue;
+							}
 							if ($from === $value['client'] && $data['query'] === $value['query']) {
 								unset($this->subscriptions['queries'][$serialArgs][$key]);
+								if (count($this->subscriptions['queries'][$serialArgs]) === 1) {
+									unset($this->subscriptions['queries'][$serialArgs]);
+								}
 							}
 						}
 					}
@@ -91,7 +97,7 @@ class Server implements MessageComponentInterface {
 			case 'publish':
 				if (isset($data['guid']) && in_array($data['event'], ['create', 'update', 'delete'])) {
 					echo "Received a publish! ({$data['guid']}, {$data['event']}, {$from->resourceId})\n";
-					foreach ($this->subscriptions['queries'] as $curQuery => $curClients) {
+					foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
 						if ($data['event'] === 'delete' || $data['event'] === 'update') {
 							// Check if it is in any queries' currents.
 							if (in_array($data['guid'], $curClients['current'])) {
@@ -104,7 +110,7 @@ class Server implements MessageComponentInterface {
 									if ($key === 'current') {
 										continue;
 									}
-									echo "Notifying client! ({$curClient['client']->resourceId})\n";
+									echo "Notifying client of modification! ({$curClient['client']->resourceId})\n";
 									$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 								}
 								continue;
@@ -130,13 +136,14 @@ class Server implements MessageComponentInterface {
 										if ($key === 'current') {
 											continue;
 										}
-										echo "Notifying client! ({$curClient['client']->resourceId})\n";
+										echo "Notifying client of new match! ({$curClient['client']->resourceId})\n";
 										$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 									}
 								}
 							}
 						}
 					}
+					unset($curClients);
 				}
 				break;
 		}
@@ -153,7 +160,40 @@ class Server implements MessageComponentInterface {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
 
-        echo "Connection {$conn->resourceId} has disconnected\n";
+        echo "Client skedaddled. ({$conn->resourceId})\n";
+
+		$mess = 0;
+		foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
+			foreach ($curClients as $key => $curClient) {
+				if ($key === 'current') {
+					continue;
+				}
+				if ($conn === $curClient['client']) {
+					unset($curClients[$key]);
+					if (count($curClients) === 1) {
+						unset($this->subscriptions['queries'][$curQuery]);
+					}
+					$mess++;
+				}
+			}
+		}
+		unset($curClients);
+		foreach ($this->subscriptions['uids'] as $curQuery => &$curClients) {
+			foreach ($curClients as $key => $curClient) {
+				if ($conn === $curClient) {
+					unset($curClients[$key]);
+					if (count($curClients) === 0) {
+						unset($this->subscriptions['uids'][$curQuery]);
+					}
+					$mess++;
+				}
+			}
+		}
+		unset($curClients);
+
+		if ($mess) {
+			echo "Cleaned up client's mess. ($mess, {$conn->resourceId})\n";
+		}
 	}
 
 	public function onError(ConnectionInterface $conn, \Exception $e) {
