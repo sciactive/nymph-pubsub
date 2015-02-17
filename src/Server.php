@@ -50,6 +50,7 @@ class Server implements MessageComponentInterface {
 					$args[0]['skip_ac'] = true;
 					$serialArgs = serialize($args);
 					if ($data['action'] === 'subscribe') {
+						echo "Client subscribed to a query! ($serialArgs, {$from->resourceId})\n";
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							$guidArgs = $args;
 							$guidArgs[0]['return'] = 'guid';
@@ -59,6 +60,7 @@ class Server implements MessageComponentInterface {
 						}
 						$this->subscriptions['queries'][$serialArgs][] = ['client' => $from, 'query' => $data['query']];
 					} elseif ($data['action'] === 'unsubscribe') {
+						echo "Client unsubscribed from a query! ($serialArgs, {$from->resourceId})\n";
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							return;
 						}
@@ -88,6 +90,7 @@ class Server implements MessageComponentInterface {
 				break;
 			case 'publish':
 				if (isset($data['guid']) && in_array($data['event'], ['create', 'update', 'delete'])) {
+					echo "Received a publish! ({$data['guid']}, {$data['event']}, {$from->resourceId})\n";
 					foreach ($this->subscriptions['queries'] as $curQuery => $curClients) {
 						if ($data['event'] === 'delete' || $data['event'] === 'update') {
 							// Check if it is in any queries' currents.
@@ -101,6 +104,7 @@ class Server implements MessageComponentInterface {
 									if ($key === 'current') {
 										continue;
 									}
+									echo "Notifying client! ({$curClient['client']->resourceId})\n";
 									$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 								}
 								continue;
@@ -126,6 +130,7 @@ class Server implements MessageComponentInterface {
 										if ($key === 'current') {
 											continue;
 										}
+										echo "Notifying client! ({$curClient['client']->resourceId})\n";
 										$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 									}
 								}

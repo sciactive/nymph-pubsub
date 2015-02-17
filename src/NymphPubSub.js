@@ -27,13 +27,26 @@
 		},
 
 		connect: function(){
+			var that = this;
+
 			this.connection = new WebSocket(this.pubsubURL);
 			this.connection.onopen = function(e) {
-				console.log("Connection established!");
+				console.log("Nymph-PubSub connection established!");
 			};
 
 			this.connection.onmessage = function(e) {
-				console.log(e.data);
+				var data = JSON.parse(e.data);
+				if (typeof data.query !== "undefined" && typeof that.subscriptions.queries[data.query] !== "undefined") {
+					Nymph.getEntities(JSON.parse(data.query)).then(function(){
+						for (var i=0; i < that.subscriptions.queries[data.query].length; i++) {
+							that.subscriptions.queries[data.query][i][0].apply(this, arguments);
+						}
+					}, function(){
+						for (var i=0; i < that.subscriptions.queries[data.query].length; i++) {
+							that.subscriptions.queries[data.query][i][1].apply(this, arguments);
+						}
+					});
+				}
 			};
 		},
 

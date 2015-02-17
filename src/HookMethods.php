@@ -39,7 +39,7 @@ class HookMethods {
 		$loop = \React\EventLoop\Factory::create();
 
 		$logger = new \Zend\Log\Logger();
-		$writer = new \Zend\Log\Writer\Stream("php://output");
+		$writer = new \Zend\Log\Writer\Stream("php://stderr");
 		$logger->addWriter($writer);
 
 		$client = new \Devristo\Phpws\Client\WebSocket($config->master['value'], $loop, $logger);
