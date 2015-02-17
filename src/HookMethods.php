@@ -11,9 +11,7 @@ class HookMethods {
 			if (!$return[0]) {
 				return;
 			}
-			$client = HookMethods::getClient();
-			$client->sendData(json_encode(['action' => 'publish', 'event' => $data['guid'] === $data['entity']->guid ? 'update' : 'create', 'guid' => $data['entity']->guid]));
-			$client->disconnect();
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => $data['guid'] === $data['entity']->guid ? 'update' : 'create', 'guid' => $data['entity']->guid]));
 		});
 		\SciActive\H::addCallback('Nymph->deleteEntity', -10, function(&$arguments, $name, &$object, &$function, &$data){
 			$data['guid'] = $arguments[0]->guid;
@@ -22,9 +20,7 @@ class HookMethods {
 			if (!$return[0]) {
 				return;
 			}
-			$client = HookMethods::getClient();
-			$client->sendData(json_encode(['action' => 'publish', 'event' => 'delete', 'guid' => $data['guid']]));
-			$client->disconnect();
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'delete', 'guid' => $data['guid']]));
 		});
 		\SciActive\H::addCallback('Nymph->deleteEntityByID', -10, function(&$arguments, $name, &$object, &$function, &$data){
 			$data['guid'] = $arguments[0];
@@ -33,20 +29,26 @@ class HookMethods {
 			if (!$return[0]) {
 				return;
 			}
-			$client = HookMethods::getClient();
-			$client->sendData(json_encode(['action' => 'publish', 'event' => 'delete', 'guid' => $data['guid']]));
-			$client->disconnect();
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'delete', 'guid' => $data['guid']]));
 		});
 	}
 
-	public static function getClient() {
+	public static function sendMessage($message) {
 		$config = \SciActive\R::_('NymphPubSubConfig');
-		$master = parse_url($config->master['value']);
 
-		$client = new WebSocketClient();
-		if (!$client->connect($master['host'], $master['port'], $master['path'])) {
-			throw new Exception('Can\'t connect to master Nymph-PubSub server.');
-		}
-		return $client;
+		$loop = \React\EventLoop\Factory::create();
+
+		$logger = new \Zend\Log\Logger();
+		$writer = new \Zend\Log\Writer\Stream("php://output");
+		$logger->addWriter($writer);
+
+		$client = new \Devristo\Phpws\Client\WebSocket($config->master['value'], $loop, $logger);
+
+		$client->on("connect", function($headers) use ($message){
+			$client->send($message);
+		});
+
+		$client->open();
+		$loop->run();
 	}
 }

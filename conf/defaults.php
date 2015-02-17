@@ -13,7 +13,7 @@ return (object) [
 	'master' => [
 		'cname' => 'Master Notifier',
 		'description' => 'The URL of one of the Nymph-PubSub instances that will act as the master. Use the default if you only use one Nymph-PubSub server.',
-		'value' => 'ws://localhost:8080/',
+		'value' => 'ws://127.0.0.1:8080/',
 	],
 	'host' => [
 		'cname' => 'Host',

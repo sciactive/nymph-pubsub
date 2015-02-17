@@ -36,11 +36,18 @@
 			"Nymph\\PubSub\\": "src/"
 		}
 	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/Devristo/phpws"
+		}
+	],
 	"require": {
 		"sciactive/nymph-server": "dev-master",
 		"sciactive/hookphp": "~1.0",
 		"videlalvaro/php-amqplib": "2.2.*",
-		"cboden/ratchet": "0.3.*"
+		"cboden/ratchet": "0.3.*",
+		"devristo/phpws": "dev-master"
 	},
 	"minimum-stability": "dev"
 }

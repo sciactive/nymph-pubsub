@@ -48,33 +48,34 @@ class Server implements MessageComponentInterface {
 						$args = array_merge([$options], $args);
 					}
 					$args[0]['skip_ac'] = true;
+					$serialArgs = serialize($args);
 					if ($data['action'] === 'subscribe') {
-						if (!$this->subscriptions['queries'][serialize($args)]) {
+						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							$guidArgs = $args;
 							$guidArgs[0]['return'] = 'guid';
-							$this->subscriptions['queries'][serialize($args)] = [
+							$this->subscriptions['queries'][$serialArgs] = [
 								'current' => call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs)
 							];
 						}
-						$this->subscriptions['queries'][serialize($args)][] = ['client' => $from, 'query' => $data['query']];
+						$this->subscriptions['queries'][$serialArgs][] = ['client' => $from, 'query' => $data['query']];
 					} elseif ($data['action'] === 'unsubscribe') {
-						if (!$this->subscriptions['queries'][serialize($args)]) {
+						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							return;
 						}
-						foreach ($this->subscriptions['queries'][serialize($args)] as $key => $value) {
+						foreach ($this->subscriptions['queries'][$serialArgs] as $key => $value) {
 							if ($from === $value['client'] && $data['query'] === $value['query']) {
-								unset($this->subscriptions['queries'][serialize($args)][$key]);
+								unset($this->subscriptions['queries'][$serialArgs][$key]);
 							}
 						}
 					}
 				} elseif (isset($data['uid']) && is_string($data['uid'])) {
 					if ($data['action'] === 'subscribe') {
-						if (!$this->subscriptions['uids'][$data['uid']]) {
+						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							$this->subscriptions['uids'][$data['uid']] = [];
 						}
 						$this->subscriptions['uids'][$data['uid']][] = $from;
 					} elseif ($data['action'] === 'unsubscribe') {
-						if (!$this->subscriptions['uids'][$data['uid']]) {
+						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							return;
 						}
 						foreach ($this->subscriptions['uids'][$data['uid']] as $key => $value) {
