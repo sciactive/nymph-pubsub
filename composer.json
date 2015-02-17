@@ -1,0 +1,46 @@
+{
+	"name": "sciactive/nymph-pubsub",
+	"description": "A library for publishing/subscribing to Nymph database changes.",
+	"version": "0.0.0-alpha.1",
+	"time": "2015-02-16",
+	"homepage": "http://nymph.io/",
+	"type": "library",
+	"authors": [
+		{
+			"name": "Hunter Perrin",
+			"email": "hunter@sciactive.com",
+			"homepage": "https://github.com/hperrin",
+			"role": "Developer"
+		}
+	],
+	"keywords": [
+		"web sockets"
+	],
+	"license": "LGPL",
+	"support": {
+		"issues": "https://github.com/sciactive/nymph/issues",
+		"wiki": "https://github.com/sciactive/nymph/wiki",
+		"source": "https://github.com/sciactive/nymph-pubsub"
+	},
+	"archive": {
+		"exclude": [
+			"**/.*",
+			"vendor"
+		]
+	},
+	"autoload": {
+		"psr-0": {
+			"Nymph\\PubSub\\": "src/"
+		},
+		"psr-4": {
+			"Nymph\\PubSub\\": "src/"
+		}
+	},
+	"require": {
+		"sciactive/nymph-server": "dev-master",
+		"sciactive/hookphp": "~1.0",
+		"videlalvaro/php-amqplib": "2.2.*",
+		"cboden/ratchet": "0.3.*"
+	},
+	"minimum-stability": "dev"
+}
