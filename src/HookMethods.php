@@ -44,7 +44,7 @@ class HookMethods {
 
 		$client = new \Devristo\Phpws\Client\WebSocket($config->master['value'], $loop, $logger);
 
-		$client->on("connect", function($headers) use ($message){
+		$client->on("connect", function() use ($message, $client){
 			$client->send($message);
 		});
 
