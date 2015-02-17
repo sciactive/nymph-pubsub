@@ -46,6 +46,7 @@ class HookMethods {
 
 		$client->on("connect", function() use ($message, $client){
 			$client->send($message);
+			$client->close();
 		});
 
 		$client->open();
