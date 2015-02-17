@@ -6,8 +6,8 @@ use Nymph\PubSub\Server;
 
 if (file_exists(dirname(__DIR__).'/vendor/autoload.php')) {
 	require dirname(__DIR__).'/vendor/autoload.php';
-} elseif (file_exists(dirname(__DIR__).'../../sciactive') && file_exists(dirname(__DIR__).'../../autoload.php')) {
-	require dirname(__DIR__).'../../autoload.php';
+} elseif (file_exists(dirname(__DIR__).'/../../sciactive') && file_exists(dirname(__DIR__).'/../../autoload.php')) {
+	require dirname(__DIR__).'/../../autoload.php';
 }
 
 try {
