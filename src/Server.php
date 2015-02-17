@@ -97,7 +97,10 @@ class Server implements MessageComponentInterface {
 								$guidArgs[0]['return'] = 'guid';
 								$curClients['current'] = call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs);
 								// Notify subscribers.
-								foreach ($curClients as $curClient) {
+								foreach ($curClients as $key => $curClient) {
+									if ($key === 'current') {
+										continue;
+									}
 									$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 								}
 								continue;
@@ -119,7 +122,10 @@ class Server implements MessageComponentInterface {
 								$curClients['current'] = call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs);
 								if ($oldCurrents !== $curClients['current']) {
 									// Notify subscribers.
-									foreach ($curClients as $curClient) {
+									foreach ($curClients as $key => $curClient) {
+										if ($key === 'current') {
+											continue;
+										}
 										$curClient['client']->send(json_encode(['query' => $curClient['query']]));
 									}
 								}
