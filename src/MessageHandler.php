@@ -1,28 +1,35 @@
 <?php
 namespace Nymph\PubSub;
-use Ratchet\MessageComponentInterface;
-use Ratchet\ConnectionInterface;
+use \Devristo\Phpws\Messaging\WebSocketMessageInterface;
+use \Devristo\Phpws\Protocol\WebSocketTransportInterface;
+use \Devristo\Phpws\Server\UriHandler\WebSocketUriHandler;
 
-class Server implements MessageComponentInterface {
-	protected $clients;
+/**
+ * Handle subscriptions and publications.
+ */
+class MessageHandler extends WebSocketUriHandler {
 	protected $subscriptions = [
 		'queries' => [],
 		'uids' => []
 	];
 
-    public function __construct() {
-        $this->clients = new \SplObjectStorage;
-    }
-
-	public function onOpen(ConnectionInterface $conn) {
-        // Store the new connection to send messages to later
-        $this->clients->attach($conn);
-
-        echo "Client joined the party! ({$conn->resourceId})\n";
+	/**
+	 * Log users who join.
+	 *
+	 * @param WebSocketTransportInterface $user
+	 */
+	public function onConnect(WebSocketTransportInterface $user){
+        $this->logger->notice("Client joined the party! ({$user->getId()})");
 	}
 
-	public function onMessage(ConnectionInterface $from, $msg) {
-		$data = json_decode($msg, true);
+	/**
+	 * Handle a message from a client.
+	 *
+	 * @param WebSocketTransportInterface $user
+	 * @param WebSocketMessageInterface $msg
+	 */
+	public function onMessage(WebSocketTransportInterface $user, WebSocketMessageInterface $msg) {
+		$data = json_decode($msg->getData(), true);
 		if (!$data['action'] || !in_array($data['action'], ['subscribe', 'unsubscribe', 'publish'])) {
 			return;
 		}
@@ -50,7 +57,7 @@ class Server implements MessageComponentInterface {
 					$args[0]['skip_ac'] = true;
 					$serialArgs = serialize($args);
 					if ($data['action'] === 'subscribe') {
-						echo "Client subscribed to a query! ($serialArgs, {$from->resourceId})\n";
+						$this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							$guidArgs = $args;
 							$guidArgs[0]['return'] = 'guid';
@@ -58,9 +65,9 @@ class Server implements MessageComponentInterface {
 								'current' => call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs)
 							];
 						}
-						$this->subscriptions['queries'][$serialArgs][] = ['client' => $from, 'query' => $data['query']];
+						$this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query']];
 					} elseif ($data['action'] === 'unsubscribe') {
-						echo "Client unsubscribed from a query! ($serialArgs, {$from->resourceId})\n";
+						$this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							return;
 						}
@@ -68,7 +75,7 @@ class Server implements MessageComponentInterface {
 							if ($key === 'current') {
 								continue;
 							}
-							if ($from === $value['client'] && $data['query'] === $value['query']) {
+							if ($user->getId() === $value['client']->getId() && $data['query'] === $value['query']) {
 								unset($this->subscriptions['queries'][$serialArgs][$key]);
 								if (count($this->subscriptions['queries'][$serialArgs]) === 1) {
 									unset($this->subscriptions['queries'][$serialArgs]);
@@ -81,13 +88,13 @@ class Server implements MessageComponentInterface {
 						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							$this->subscriptions['uids'][$data['uid']] = [];
 						}
-						$this->subscriptions['uids'][$data['uid']][] = $from;
+						$this->subscriptions['uids'][$data['uid']][] = $user;
 					} elseif ($data['action'] === 'unsubscribe') {
 						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							return;
 						}
 						foreach ($this->subscriptions['uids'][$data['uid']] as $key => $value) {
-							if ($from === $value) {
+							if ($user->getId() === $value->getId()) {
 								unset($this->subscriptions['uids'][$data['uid']][$key]);
 							}
 						}
@@ -96,7 +103,7 @@ class Server implements MessageComponentInterface {
 				break;
 			case 'publish':
 				if (isset($data['guid']) && in_array($data['event'], ['create', 'update', 'delete'])) {
-					echo "Received a publish! ({$data['guid']}, {$data['event']}, {$from->resourceId})\n";
+					$this->logger->notice("Received a publish! ({$data['guid']}, {$data['event']}, {$user->getId()})");
 					foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
 						if ($data['event'] === 'delete' || $data['event'] === 'update') {
 							// Check if it is in any queries' currents.
@@ -110,8 +117,8 @@ class Server implements MessageComponentInterface {
 									if ($key === 'current') {
 										continue;
 									}
-									echo "Notifying client of modification! ({$curClient['client']->resourceId})\n";
-									$curClient['client']->send(json_encode(['query' => $curClient['query']]));
+									$this->logger->notice("Notifying client of modification! ({$curClient['client']->getId()})");
+									$curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
 								}
 								continue;
 							}
@@ -136,8 +143,8 @@ class Server implements MessageComponentInterface {
 										if ($key === 'current') {
 											continue;
 										}
-										echo "Notifying client of new match! ({$curClient['client']->resourceId})\n";
-										$curClient['client']->send(json_encode(['query' => $curClient['query']]));
+										$this->logger->notice("Notifying client of new match! ({$curClient['client']->getId()})");
+										$curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
 									}
 								}
 							}
@@ -147,20 +154,15 @@ class Server implements MessageComponentInterface {
 				}
 				break;
 		}
-
-        foreach ($this->clients as $client) {
-            if ($from !== $client) {
-                // The sender is not the receiver, send to each client connected
-                $client->send($msg);
-            }
-        }
 	}
 
-	public function onClose(ConnectionInterface $conn) {
-        // The connection is closed, remove it, as we can no longer send it messages
-        $this->clients->detach($conn);
-
-        echo "Client skedaddled. ({$conn->resourceId})\n";
+	/**
+	 * Clean up after users who leave.
+	 *
+	 * @param WebSocketTransportInterface $user
+	 */
+	public function onDisconnect(WebSocketTransportInterface $user){
+        $this->logger->notice("Client skedaddled. ({$user->getId()})");
 
 		$mess = 0;
 		foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
@@ -168,7 +170,7 @@ class Server implements MessageComponentInterface {
 				if ($key === 'current') {
 					continue;
 				}
-				if ($conn === $curClient['client']) {
+				if ($user->getId() === $curClient['client']->getId()) {
 					unset($curClients[$key]);
 					if (count($curClients) === 1) {
 						unset($this->subscriptions['queries'][$curQuery]);
@@ -180,7 +182,7 @@ class Server implements MessageComponentInterface {
 		unset($curClients);
 		foreach ($this->subscriptions['uids'] as $curQuery => &$curClients) {
 			foreach ($curClients as $key => $curClient) {
-				if ($conn === $curClient) {
+				if ($user->getId() === $curClient->getId()) {
 					unset($curClients[$key]);
 					if (count($curClients) === 0) {
 						unset($this->subscriptions['uids'][$curQuery]);
@@ -192,13 +194,7 @@ class Server implements MessageComponentInterface {
 		unset($curClients);
 
 		if ($mess) {
-			echo "Cleaned up client's mess. ($mess, {$conn->resourceId})\n";
+			$this->logger->notice("Cleaned up client's mess. ($mess, {$user->getId()})");
 		}
-	}
-
-	public function onError(ConnectionInterface $conn, \Exception $e) {
-        echo "An error has occurred: {$e->getMessage()}\n";
-
-        $conn->close();
 	}
 }
