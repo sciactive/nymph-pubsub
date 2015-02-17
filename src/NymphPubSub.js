@@ -171,9 +171,13 @@
 		promise.subscribe = function(resolve, reject){
 			var newResolve = function(args){
 				if (!args.length) {
-					resolve(null);
+					if (resolve){
+						resolve(null);
+					}
 				} else {
-					resolve(args[0]);
+					if (resolve){
+						resolve(args[0]);
+					}
 				}
 			};
 			var callbacks = [newResolve, reject];
@@ -204,6 +208,36 @@
 			};
 		};
 		return promise;
+	};
+	Entity.prototype.subscribe = function(resolve, reject){
+		if (!this.guid) {
+			return false;
+		}
+		var that = this,
+			query = [{'class': this.class, 'limit': 1}, {type: '&', guid: this.guid}],
+			jsonQuery = JSON.stringify(query);
+
+		var newResolve = function(args){
+			if (!args.length) {
+				that.guid = null;
+				if (resolve){
+					resolve(that);
+				}
+			} else {
+				that.init(args[0]);
+				if (resolve){
+					resolve(that);
+				}
+			}
+		};
+		var callbacks = [newResolve, reject];
+
+		NymphPubSub.subscribeQuery(jsonQuery, callbacks);
+		return {
+			unsubscribe: function(){
+				NymphPubSub.unsubscribeQuery(jsonQuery, callbacks);
+			}
+		};
 	};
 
 	return NymphPubSub.init(NymphOptions);
