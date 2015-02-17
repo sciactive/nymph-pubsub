@@ -37,7 +37,7 @@
 			this.connection.onmessage = function(e) {
 				var data = JSON.parse(e.data);
 				if (typeof data.query !== "undefined" && typeof that.subscriptions.queries[data.query] !== "undefined") {
-					Nymph.getEntities(JSON.parse(data.query)).then(function(){
+					Nymph.getEntities.apply(Nymph, JSON.parse(data.query)).then(function(){
 						for (var i=0; i < that.subscriptions.queries[data.query].length; i++) {
 							that.subscriptions.queries[data.query][i][0].apply(this, arguments);
 						}
