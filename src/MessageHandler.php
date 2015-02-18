@@ -57,7 +57,6 @@ class MessageHandler extends WebSocketUriHandler {
 					$args[0]['skip_ac'] = true;
 					$serialArgs = serialize($args);
 					if ($data['action'] === 'subscribe') {
-						$this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							$guidArgs = $args;
 							$guidArgs[0]['return'] = 'guid';
@@ -66,8 +65,8 @@ class MessageHandler extends WebSocketUriHandler {
 							];
 						}
 						$this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query']];
+						$this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
 					} elseif ($data['action'] === 'unsubscribe') {
-						$this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							return;
 						}
@@ -77,6 +76,7 @@ class MessageHandler extends WebSocketUriHandler {
 							}
 							if ($user->getId() === $value['client']->getId() && $data['query'] === $value['query']) {
 								unset($this->subscriptions['queries'][$serialArgs][$key]);
+								$this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
 								if (count($this->subscriptions['queries'][$serialArgs]) === 1) {
 									unset($this->subscriptions['queries'][$serialArgs]);
 								}
@@ -89,6 +89,7 @@ class MessageHandler extends WebSocketUriHandler {
 							$this->subscriptions['uids'][$data['uid']] = [];
 						}
 						$this->subscriptions['uids'][$data['uid']][] = $user;
+						$this->logger->notice("Client subscribed to a UID! ({$data['uid']}, {$user->getId()})");
 					} elseif ($data['action'] === 'unsubscribe') {
 						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							return;
@@ -96,7 +97,12 @@ class MessageHandler extends WebSocketUriHandler {
 						foreach ($this->subscriptions['uids'][$data['uid']] as $key => $value) {
 							if ($user->getId() === $value->getId()) {
 								unset($this->subscriptions['uids'][$data['uid']][$key]);
+								$this->logger->notice("Client unsubscribed from a UID! ({$data['uid']}, {$user->getId()})");
+								break;
 							}
+						}
+						if (count($this->subscriptions['uids'][$data['uid']]) === 0) {
+							unset($this->subscriptions['uids'][$data['uid']]);
 						}
 					}
 				}
@@ -151,6 +157,16 @@ class MessageHandler extends WebSocketUriHandler {
 						}
 					}
 					unset($curClients);
+				} elseif ((isset($data['name']) || (isset($data['oldName']) && isset($data['newName']))) && in_array($data['event'], ['newUID', 'setUID', 'renameUID', 'deleteUID'])) {
+					foreach ($data as $key => $name) {
+						if (!in_array($key, ['name', 'newName', 'oldName']) || !key_exists($name, $this->subscriptions['uids'])) {
+							continue;
+						}
+						foreach ($this->subscriptions['uids'][$name] as $curClient) {
+							$this->logger->notice("Notifying client of {$data['event']}! ($name, {$curClient->getId()})");
+							$curClient->sendString(json_encode(['uid' => $name]));
+						}
+					}
 				}
 				break;
 		}

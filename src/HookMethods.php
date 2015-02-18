@@ -31,6 +31,43 @@ class HookMethods {
 			}
 			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'delete', 'guid' => $data['guid']]));
 		});
+		\SciActive\H::addCallback('Nymph->newUID', -10, function(&$arguments, $name, &$object, &$function, &$data){
+			$data['name'] = $arguments[0];
+		});
+		\SciActive\H::addCallback('Nymph->newUID', 10, function(&$return, $name, &$object, &$function, &$data){
+			if (!isset($return[0])) {
+				return;
+			}
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'newUID', 'name' => $data['name']]));
+		});
+		\SciActive\H::addCallback('Nymph->setUID', -10, function(&$arguments, $name, &$object, &$function, &$data){
+			$data['name'] = $arguments[0];
+		});
+		\SciActive\H::addCallback('Nymph->setUID', 10, function(&$return, $name, &$object, &$function, &$data){
+			if (!$return[0]) {
+				return;
+			}
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'setUID', 'name' => $data['name']]));
+		});
+		\SciActive\H::addCallback('Nymph->renameUID', -10, function(&$arguments, $name, &$object, &$function, &$data){
+			$data['oldName'] = $arguments[0];
+			$data['newName'] = $arguments[1];
+		});
+		\SciActive\H::addCallback('Nymph->renameUID', 10, function(&$return, $name, &$object, &$function, &$data){
+			if (!$return[0]) {
+				return;
+			}
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'renameUID', 'oldName' => $data['oldName'], 'newName' => $data['newName']]));
+		});
+		\SciActive\H::addCallback('Nymph->deleteUID', -10, function(&$arguments, $name, &$object, &$function, &$data){
+			$data['name'] = $arguments[0];
+		});
+		\SciActive\H::addCallback('Nymph->deleteUID', 10, function(&$return, $name, &$object, &$function, &$data){
+			if (!$return[0]) {
+				return;
+			}
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => 'deleteUID', 'name' => $data['name']]));
+		});
 	}
 
 	public static function sendMessage($message) {
