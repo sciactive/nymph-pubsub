@@ -25,5 +25,10 @@ return (object) [
 		'description' => 'The port to listen on.',
 		'value' => 8080,
 	],
+	'broadcast_counts' => [
+		'cname' => 'Broadcast Counts',
+		'description' => 'Allow clients to request to be notified when other clients subscribe to the same queries.',
+		'value' => true,
+	],
 ];
 

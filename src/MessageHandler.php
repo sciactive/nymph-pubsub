@@ -64,8 +64,20 @@ class MessageHandler extends WebSocketUriHandler {
 								'current' => call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs)
 							];
 						}
-						$this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query']];
+						$this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query'], 'count' => !!$data['count']];
 						$this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
+						if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+							// Notify clients of the subscription count.
+							$count = count($this->subscriptions['queries'][$serialArgs]) - 1;
+							foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
+								if ($key === 'current') {
+									continue;
+								}
+								if ($curClient['count']) {
+									$curClient['client']->sendString(json_encode(['query' => $curClient['query'], 'count' => $count]));
+								}
+							}
+						}
 					} elseif ($data['action'] === 'unsubscribe') {
 						if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
 							return;
@@ -77,6 +89,18 @@ class MessageHandler extends WebSocketUriHandler {
 							if ($user->getId() === $value['client']->getId() && $data['query'] === $value['query']) {
 								unset($this->subscriptions['queries'][$serialArgs][$key]);
 								$this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
+								if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+									// Notify clients of the subscription count.
+									$count = count($this->subscriptions['queries'][$serialArgs]) - 1;
+									foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
+										if ($key === 'current') {
+											continue;
+										}
+										if ($curClient['count']) {
+											$curClient['client']->sendString(json_encode(['query' => $curClient['query'], 'count' => $count]));
+										}
+									}
+								}
 								if (count($this->subscriptions['queries'][$serialArgs]) === 1) {
 									unset($this->subscriptions['queries'][$serialArgs]);
 								}
@@ -88,16 +112,34 @@ class MessageHandler extends WebSocketUriHandler {
 						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							$this->subscriptions['uids'][$data['uid']] = [];
 						}
-						$this->subscriptions['uids'][$data['uid']][] = $user;
+						$this->subscriptions['uids'][$data['uid']][] = ['client' => $user, 'count' => !!$data['count']];
 						$this->logger->notice("Client subscribed to a UID! ({$data['uid']}, {$user->getId()})");
+						if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+							// Notify clients of the subscription count.
+							$count = count($this->subscriptions['uids'][$data['uid']]);
+							foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
+								if ($curClient['count']) {
+									$curClient['client']->sendString(json_encode(['uid' => $data['uid'], 'count' => $count]));
+								}
+							}
+						}
 					} elseif ($data['action'] === 'unsubscribe') {
 						if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
 							return;
 						}
 						foreach ($this->subscriptions['uids'][$data['uid']] as $key => $value) {
-							if ($user->getId() === $value->getId()) {
+							if ($user->getId() === $value['client']->getId()) {
 								unset($this->subscriptions['uids'][$data['uid']][$key]);
 								$this->logger->notice("Client unsubscribed from a UID! ({$data['uid']}, {$user->getId()})");
+								if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+									// Notify clients of the subscription count.
+									$count = count($this->subscriptions['uids'][$data['uid']]);
+									foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
+										if ($curClient['count']) {
+											$curClient['client']->sendString(json_encode(['uid' => $data['uid'], 'count' => $count]));
+										}
+									}
+								}
 								break;
 							}
 						}
@@ -163,8 +205,8 @@ class MessageHandler extends WebSocketUriHandler {
 							continue;
 						}
 						foreach ($this->subscriptions['uids'][$name] as $curClient) {
-							$this->logger->notice("Notifying client of {$data['event']}! ($name, {$curClient->getId()})");
-							$curClient->sendString(json_encode(['uid' => $name]));
+							$this->logger->notice("Notifying client of {$data['event']}! ($name, {$curClient['client']->getId()})");
+							$curClient['client']->sendString(json_encode(['uid' => $name]));
 						}
 					}
 				}
@@ -188,6 +230,18 @@ class MessageHandler extends WebSocketUriHandler {
 				}
 				if ($user->getId() === $curClient['client']->getId()) {
 					unset($curClients[$key]);
+					if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+						// Notify clients of the subscription count.
+						$count = count($curClients) - 1;
+						foreach ($curClients as $key => $curCountClient) {
+							if ($key === 'current') {
+								continue;
+							}
+							if ($curCountClient['count']) {
+								$curCountClient['client']->sendString(json_encode(['query' => $curCountClient['query'], 'count' => $count]));
+							}
+						}
+					}
 					if (count($curClients) === 1) {
 						unset($this->subscriptions['queries'][$curQuery]);
 					}
@@ -196,12 +250,21 @@ class MessageHandler extends WebSocketUriHandler {
 			}
 		}
 		unset($curClients);
-		foreach ($this->subscriptions['uids'] as $curQuery => &$curClients) {
+		foreach ($this->subscriptions['uids'] as $curUID => &$curClients) {
 			foreach ($curClients as $key => $curClient) {
-				if ($user->getId() === $curClient->getId()) {
+				if ($user->getId() === $curClient['client']->getId()) {
 					unset($curClients[$key]);
+					if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+						// Notify clients of the subscription count.
+						$count = count($curClients);
+						foreach ($curClients as $curCountClient) {
+							if ($curCountClient['count']) {
+								$curCountClient['client']->sendString(json_encode(['uid' => $curUID, 'count' => $count]));
+							}
+						}
+					}
 					if (count($curClients) === 0) {
-						unset($this->subscriptions['uids'][$curQuery]);
+						unset($this->subscriptions['uids'][$curUID]);
 					}
 					$mess++;
 				}
