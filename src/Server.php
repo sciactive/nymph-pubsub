@@ -10,7 +10,7 @@ class Server {
 	private $server;
 
 	public function __construct() {
-		$config = \SciActive\R::_('NymphPubSubConfig');
+		$config = \SciActive\RequirePHP::_('NymphPubSubConfig');
 
 		$this->loop = \React\EventLoop\Factory::create();
 

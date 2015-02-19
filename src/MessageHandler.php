@@ -3,6 +3,7 @@ namespace Nymph\PubSub;
 use \Devristo\Phpws\Messaging\WebSocketMessageInterface;
 use \Devristo\Phpws\Protocol\WebSocketTransportInterface;
 use \Devristo\Phpws\Server\UriHandler\WebSocketUriHandler;
+use \SciActive\RequirePHP as RequirePHP;
 
 /**
  * Handle subscriptions and publications.
@@ -66,7 +67,7 @@ class MessageHandler extends WebSocketUriHandler {
 						}
 						$this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query'], 'count' => !!$data['count']];
 						$this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
-						if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+						if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 							// Notify clients of the subscription count.
 							$count = count($this->subscriptions['queries'][$serialArgs]) - 1;
 							foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
@@ -89,7 +90,7 @@ class MessageHandler extends WebSocketUriHandler {
 							if ($user->getId() === $value['client']->getId() && $data['query'] === $value['query']) {
 								unset($this->subscriptions['queries'][$serialArgs][$key]);
 								$this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
-								if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+								if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 									// Notify clients of the subscription count.
 									$count = count($this->subscriptions['queries'][$serialArgs]) - 1;
 									foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
@@ -114,7 +115,7 @@ class MessageHandler extends WebSocketUriHandler {
 						}
 						$this->subscriptions['uids'][$data['uid']][] = ['client' => $user, 'count' => !!$data['count']];
 						$this->logger->notice("Client subscribed to a UID! ({$data['uid']}, {$user->getId()})");
-						if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+						if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 							// Notify clients of the subscription count.
 							$count = count($this->subscriptions['uids'][$data['uid']]);
 							foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
@@ -131,7 +132,7 @@ class MessageHandler extends WebSocketUriHandler {
 							if ($user->getId() === $value['client']->getId()) {
 								unset($this->subscriptions['uids'][$data['uid']][$key]);
 								$this->logger->notice("Client unsubscribed from a UID! ({$data['uid']}, {$user->getId()})");
-								if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+								if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 									// Notify clients of the subscription count.
 									$count = count($this->subscriptions['uids'][$data['uid']]);
 									foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
@@ -230,7 +231,7 @@ class MessageHandler extends WebSocketUriHandler {
 				}
 				if ($user->getId() === $curClient['client']->getId()) {
 					unset($curClients[$key]);
-					if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+					if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 						// Notify clients of the subscription count.
 						$count = count($curClients) - 1;
 						foreach ($curClients as $key => $curCountClient) {
@@ -254,7 +255,7 @@ class MessageHandler extends WebSocketUriHandler {
 			foreach ($curClients as $key => $curClient) {
 				if ($user->getId() === $curClient['client']->getId()) {
 					unset($curClients[$key]);
-					if (\SciActive\R::_('NymphPubSubConfig')->broadcast_counts['value']) {
+					if (RequirePHP::_('NymphPubSubConfig')->broadcast_counts['value']) {
 						// Notify clients of the subscription count.
 						$count = count($curClients);
 						foreach ($curClients as $curCountClient) {
