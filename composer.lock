@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a522009e4ecc78973356df5e7db4afa6",
+    "hash": "745f48f557936a6da4d97df97f9e8a79",
     "packages": [
         {
             "name": "devristo/phpws",
@@ -436,16 +436,16 @@
         },
         {
             "name": "sciactive/nymph-server",
-            "version": "dev-master",
+            "version": "1.4.0-beta.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sciactive/nymph-server.git",
-                "reference": "98b8ecfe8585cb10e8956485003ef3b2f07750f3"
+                "reference": "eb5e1e5449e99f44391a3fa1e168a3e5d21d6477"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/98b8ecfe8585cb10e8956485003ef3b2f07750f3",
-                "reference": "98b8ecfe8585cb10e8956485003ef3b2f07750f3",
+                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/eb5e1e5449e99f44391a3fa1e168a3e5d21d6477",
+                "reference": "eb5e1e5449e99f44391a3fa1e168a3e5d21d6477",
                 "shasum": ""
             },
             "require": {
@@ -486,7 +486,7 @@
                 "postgres",
                 "postgresql"
             ],
-            "time": "2015-02-17 07:24:49"
+            "time": "2015-02-18 00:00:00"
         },
         {
             "name": "sciactive/requirephp",
@@ -968,7 +968,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "sciactive/nymph-server": 20,
         "devristo/phpws": 20
     },
     "prefer-stable": false,

@@ -1,8 +1,8 @@
 {
 	"name": "sciactive/nymph-pubsub",
 	"description": "A library for publishing/subscribing to Nymph database changes.",
-	"version": "0.0.0-alpha.1",
-	"time": "2015-02-16",
+	"version": "1.4.0-beta.2",
+	"time": "2015-02-18",
 	"homepage": "http://nymph.io/",
 	"type": "library",
 	"authors": [
@@ -43,7 +43,7 @@
 		}
 	],
 	"require": {
-		"sciactive/nymph-server": "dev-master",
+		"sciactive/nymph-server": "1.4.0-beta.2",
 		"sciactive/hookphp": "~1.0",
 		"videlalvaro/php-amqplib": "2.2.*",
 		"devristo/phpws": "dev-master"
