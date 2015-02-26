@@ -47,7 +47,7 @@
 		"sciactive/hookphp": "~1.1",
 		"sciactive/requirephp": "~1.3",
 		"videlalvaro/php-amqplib": "2.2.*",
-		"devristo/phpws": "1.4.0-beta.3"
+		"devristo/phpws": "dev-master"
 	},
 	"minimum-stability": "dev"
 }
