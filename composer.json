@@ -43,11 +43,11 @@
 		}
 	],
 	"require": {
-		"sciactive/nymph-server": "dev-master",
+		"sciactive/nymph-server": "1.4.0-beta.3",
 		"sciactive/hookphp": "~1.1",
 		"sciactive/requirephp": "~1.3",
 		"videlalvaro/php-amqplib": "2.2.*",
-		"devristo/phpws": "dev-master"
+		"devristo/phpws": "1.4.0-beta.3"
 	},
 	"minimum-stability": "dev"
 }
