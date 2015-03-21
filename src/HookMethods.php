@@ -12,7 +12,7 @@ class HookMethods {
 			if (!$return[0]) {
 				return;
 			}
-			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => $data['guid'] === $data['entity']->guid ? 'update' : 'create', 'guid' => $data['entity']->guid]));
+			HookMethods::sendMessage(json_encode(['action' => 'publish', 'event' => $data['guid'] === $data['entity']->guid ? 'update' : 'create', 'guid' => $data['entity']->guid, 'entity' => $data['entity']->jsonSerialize(false)]));
 		});
 		Hook::addCallback('Nymph->deleteEntity', -10, function(&$arguments, $name, &$object, &$function, &$data){
 			$data['guid'] = $arguments[0]->guid;
