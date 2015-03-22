@@ -10,10 +10,19 @@
  */
 
 return (object) [
-	'master' => [
-		'cname' => 'Master Notifier',
-		'description' => 'The URL of one of the Nymph-PubSub instances that will act as the master. Use the default if you only use one Nymph-PubSub server.',
-		'value' => 'ws://127.0.0.1:8080/',
+	'entries' => [
+		'cname' => 'PubSub Entries',
+		'description' => 'The URLs of the Nymph-PubSub servers to directly publish to. These servers are how this host will enter the PubSub network. If you only have one PubSub server, it needs to be listed here.',
+		'value' => [
+			'ws://127.0.0.1:8080/',
+		],
+	],
+	'relays' => [
+		'cname' => 'PubSub Relays',
+		'description' => 'The URLs of additional Nymph-PubSub servers to relay publishes to. If this host is a PubSub server, these servers are how it will continue into your PubSub network.',
+		'value' => [
+			//'ws://127.0.0.1:8080/',
+		],
 	],
 	'host' => [
 		'cname' => 'Host',

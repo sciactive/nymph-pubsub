@@ -80,14 +80,17 @@ class HookMethods {
 		$writer = new \Zend\Log\Writer\Stream("php://stderr");
 		$logger->addWriter($writer);
 
-		$client = new \Devristo\Phpws\Client\WebSocket($config->master['value'], $loop, $logger);
+		foreach ($config->entries['value'] as $host) {
+			$client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
 
-		$client->on("connect", function() use ($message, $client){
-			$client->send($message);
-			$client->close();
-		});
+			$client->on("connect", function() use ($message, $client){
+				$client->send($message);
+				$client->close();
+			});
 
-		$client->open();
+			$client->open();
+		}
+
 		$loop->run();
 	}
 }

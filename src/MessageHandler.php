@@ -151,8 +151,19 @@ class MessageHandler extends WebSocketUriHandler {
 				}
 				break;
 			case 'publish':
-				if (isset($data['guid']) && in_array($data['event'], ['create', 'update', 'delete'])) {
-					$this->logger->notice("Received a publish! ({$data['guid']}, {$data['event']}, {$user->getId()})");
+				if (
+						isset($data['guid']) &&
+						(
+							$data['event'] === 'delete' ||
+							(
+								isset($data['entity']) &&
+								($data['event'] === 'create' || $data['event'] === 'update')
+							)
+						)
+				) {
+					$this->logger->notice("Received an entity publish! ({$data['guid']}, {$data['event']}, {$user->getId()})");
+					// Relay the publish to other servers.
+					$this->relay($msg->getData());
 					foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
 						if ($data['event'] === 'delete' || $data['event'] === 'update') {
 							// Check if it is in any queries' currents.
@@ -203,6 +214,9 @@ class MessageHandler extends WebSocketUriHandler {
 					}
 					unset($curClients);
 				} elseif ((isset($data['name']) || (isset($data['oldName']) && isset($data['newName']))) && in_array($data['event'], ['newUID', 'setUID', 'renameUID', 'deleteUID'])) {
+					$this->logger->notice("Received a UID publish! (".(isset($data['name']) ? $data['name'] : "{$data['oldName']} => {$data['newName']}").", {$data['event']}, {$user->getId()})");
+					// Relay the publish to other servers.
+					$this->relay($msg->getData());
 					foreach ($data as $key => $name) {
 						if (!in_array($key, ['name', 'newName', 'oldName']) || !key_exists($name, $this->subscriptions['uids'])) {
 							continue;
@@ -278,5 +292,37 @@ class MessageHandler extends WebSocketUriHandler {
 		if ($mess) {
 			$this->logger->notice("Cleaned up client's mess. ($mess, {$user->getId()})");
 		}
+	}
+
+	/**
+	 * Relay publish data to other servers.
+	 *
+	 * @param string $message The publish data to relay.
+	 */
+	private function relay($message) {
+		$config = \SciActive\RequirePHP::_('NymphPubSubConfig');
+
+		if (!$config->relays['value']) {
+			return;
+		}
+
+		$loop = \React\EventLoop\Factory::create();
+
+		$logger = new \Zend\Log\Logger();
+		$writer = new \Zend\Log\Writer\Stream("php://stderr");
+		$logger->addWriter($writer);
+
+		foreach ($config->relays['value'] as $host) {
+			$client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
+
+			$client->on("connect", function() use ($message, $client){
+				$client->send($message);
+				$client->close();
+			});
+
+			$client->open();
+		}
+
+		$loop->run();
 	}
 }
