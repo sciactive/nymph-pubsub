@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "216ddfd6905c6c0b11fe346af8f8a272",
+    "hash": "a9c3b29026b6d04e8c0bf3f6c1241788",
     "packages": [
         {
             "name": "devristo/phpws",
@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Devristo/phpws.git",
-                "reference": "6f1e3905d0894f1b4c98f51c04e3949dc3559e33"
+                "reference": "36bf228c329c4c7c576394f13330696d0ad521b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Devristo/phpws/zipball/6f1e3905d0894f1b4c98f51c04e3949dc3559e33",
-                "reference": "6f1e3905d0894f1b4c98f51c04e3949dc3559e33",
+                "url": "https://api.github.com/repos/Devristo/phpws/zipball/36bf228c329c4c7c576394f13330696d0ad521b3",
+                "reference": "36bf228c329c4c7c576394f13330696d0ad521b3",
                 "shasum": ""
             },
             "require": {
@@ -43,7 +43,7 @@
                 "source": "https://github.com/Devristo/phpws/tree/master",
                 "issues": "https://github.com/Devristo/phpws/issues"
             },
-            "time": "2015-01-22 16:05:38"
+            "time": "2015-03-13 16:23:37"
         },
         {
             "name": "evenement/evenement",
@@ -306,12 +306,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/socket-client.git",
-                "reference": "5b4ccbb9071f81280f20971cccd2abe980d027ca"
+                "reference": "1375dac21b1881cba31c2b38f412dc039566673f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/socket-client/zipball/5b4ccbb9071f81280f20971cccd2abe980d027ca",
-                "reference": "5b4ccbb9071f81280f20971cccd2abe980d027ca",
+                "url": "https://api.github.com/repos/reactphp/socket-client/zipball/1375dac21b1881cba31c2b38f412dc039566673f",
+                "reference": "1375dac21b1881cba31c2b38f412dc039566673f",
                 "shasum": ""
             },
             "require": {
@@ -340,7 +340,7 @@
             "keywords": [
                 "Socket"
             ],
-            "time": "2014-10-16 22:23:10"
+            "time": "2015-03-20 15:24:06"
         },
         {
             "name": "react/stream",
@@ -440,12 +440,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sciactive/nymph-server.git",
-                "reference": "516cac700068c79eb83a5fb49ddf3b3877888146"
+                "reference": "7979b62bfcb990b1a47c91af1e44cf179d4ce151"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/516cac700068c79eb83a5fb49ddf3b3877888146",
-                "reference": "516cac700068c79eb83a5fb49ddf3b3877888146",
+                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/7979b62bfcb990b1a47c91af1e44cf179d4ce151",
+                "reference": "7979b62bfcb990b1a47c91af1e44cf179d4ce151",
                 "shasum": ""
             },
             "require": {
@@ -486,7 +486,7 @@
                 "postgres",
                 "postgresql"
             ],
-            "time": "2015-02-19 09:00:00"
+            "time": "2015-03-24 18:18:53"
         },
         {
             "name": "sciactive/requirephp",
