@@ -192,8 +192,9 @@ class MessageHandler extends WebSocketUriHandler {
 							$entityData = $data['entity']['data'];
 							$entityData['cdate'] = $data['entity']['cdate'];
 							$entityData['mdate'] = $data['entity']['mdate'];
+							$entitySData = [];
 
-							if ($options['class'] === $data['entity']['class'] && \Nymph\Nymph::checkData($entityData, [], $selectors, $data['guid'], $data['entity']['tags'])) {
+							if ($options['class'] === $data['entity']['class'] && \Nymph\Nymph::checkData($entityData, $entitySData, $selectors, $data['guid'], $data['entity']['tags'])) {
 								// Update currents list.
 								$oldCurrents = $curClients['current'];
 								$guidArgs = unserialize($curQuery);
