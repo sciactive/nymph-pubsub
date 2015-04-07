@@ -196,19 +196,22 @@ class MessageHandler extends WebSocketUriHandler {
 
 							if ($options['class'] === $data['entity']['class'] && \Nymph\Nymph::checkData($entityData, $entitySData, $selectors, $data['guid'], $data['entity']['tags'])) {
 								// Update currents list.
-								$oldCurrents = $curClients['current'];
 								$guidArgs = unserialize($curQuery);
 								$guidArgs[0]['return'] = 'guid';
 								$curClients['current'] = call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs);
-								if ($oldCurrents !== $curClients['current']) {
-									// Notify subscribers.
-									foreach ($curClients as $key => $curClient) {
-										if ($key === 'current') {
-											continue;
-										}
-										$this->logger->notice("Notifying client of new match! ({$curClient['client']->getId()})");
-										$curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
+								// If we're here, it means the query didn't
+								// match the entity before, and now it does. We
+								// could check currents to see if it's been
+								// removed by limits, but that may give us bad
+								// data, since the client queries are filtered
+								// by Tilmeld.
+								// Notify subscribers.
+								foreach ($curClients as $key => $curClient) {
+									if ($key === 'current') {
+										continue;
 									}
+									$this->logger->notice("Notifying client of new match! ({$curClient['client']->getId()})");
+									$curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
 								}
 							}
 						}
