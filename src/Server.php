@@ -9,7 +9,42 @@ class Server {
 	private $router;
 	private $server;
 
-	public function __construct() {
+	/**
+	 * Apply configuration to Nymph-PubSub.
+	 *
+	 * $config should be an associative array of Nymph-PubSub configuration. Use
+	 * the following form:
+	 *
+	 * [
+	 *     'driver' => 'MySQL',
+	 *     'pubsub' => true,
+	 *     'MySql' => [
+	 *         'host' => '127.0.0.1'
+	 *     ]
+	 * ]
+	 *
+	 * @param array $config An associative array of Nymph's configuration.
+	 */
+	public static function configure($config = []) {
+		\SciActive\RequirePHP::_('NymphPubSubConfig', [], function() use ($config){
+			$defaults = include dirname(__DIR__).'/conf/defaults.php';
+			$nymphConfig = [];
+			foreach ($defaults as $curName => $curOption) {
+				if ((array) $curOption === $curOption && isset($curOption['value'])) {
+					$nymphConfig[$curName] = $curOption['value'];
+				} else {
+					$nymphConfig[$curName] = [];
+					foreach ($curOption as $curSubName => $curSubOption) {
+						$nymphConfig[$curName][$curSubName] = $curSubOption['value'];
+					}
+				}
+			}
+			return array_replace_recursive($nymphConfig, $config);
+		});
+	}
+
+	public function __construct($config = []) {
+		self::configure($config);
 		$config = \SciActive\RequirePHP::_('NymphPubSubConfig');
 
 		$this->loop = \React\EventLoop\Factory::create();
@@ -20,8 +55,8 @@ class Server {
 		$this->logger->addWriter($this->writer);
 
 		// Create a WebSocket server using SSL
-		$this->logger->notice("Nymph-PubSub server starting on {$config->host['value']}:{$config->port['value']}.");
-		$this->server = new WebSocketServer("tcp://{$config->host['value']}:{$config->port['value']}", $this->loop, $this->logger);
+		$this->logger->notice("Nymph-PubSub server starting on {$config['host']}:{$config['port']}.");
+		$this->server = new WebSocketServer("tcp://{$config['host']}:{$config['port']}", $this->loop, $this->logger);
 
 		// Create a router which transfers all /chat connections to the MessageHandler class
 		$this->router = new \Devristo\Phpws\Server\UriHandler\ClientRouter($this->server, $this->logger);

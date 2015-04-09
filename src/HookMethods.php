@@ -4,6 +4,12 @@ use \SciActive\Hook as Hook;
 
 class HookMethods {
 	public static function setup() {
+		if (!\SciActive\RequirePHP::isdef('NymphPubSubConfig')) {
+			\SciActive\RequirePHP::_('NymphPubSubConfig', [], function(){
+				$defaults = include dirname(__DIR__).'/conf/defaults.php';
+			});
+		}
+
 		Hook::addCallback('Nymph->saveEntity', -10, function(&$arguments, $name, &$object, &$function, &$data){
 			$data['entity'] = $arguments[0];
 			$data['guid'] = $arguments[0]->guid;
@@ -80,7 +86,7 @@ class HookMethods {
 		$writer = new \Zend\Log\Writer\Stream("php://stderr");
 		$logger->addWriter($writer);
 
-		foreach ($config->entries['value'] as $host) {
+		foreach ($config['entries'] as $host) {
 			$client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
 
 			$client->on("connect", function() use ($message, $client){
