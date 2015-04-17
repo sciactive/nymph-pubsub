@@ -55,7 +55,16 @@ class Server {
 		$this->logger->addWriter($this->writer);
 
 		// Create a WebSocket server using SSL
-		$this->logger->notice("Nymph-PubSub server starting on {$config['host']}:{$config['port']}.");
+		try {
+			$this->logger->notice("Nymph-PubSub server starting on {$config['host']}:{$config['port']}.");
+		} catch (\Exception $e) {
+			if (strpos($e->getMessage(), 'date.timezone')) {
+				echo "It looks like you haven't set a default timezone. In order to avoid constant complaints from Zend's logger, I'm just going to kill myself now.\n\n";
+				echo $e->getMessage()."\n";
+				exit;
+			}
+			throw $e;
+		}
 		$this->server = new WebSocketServer("tcp://{$config['host']}:{$config['port']}", $this->loop, $this->logger);
 
 		// Create a router which transfers all /chat connections to the MessageHandler class
@@ -72,7 +81,15 @@ class Server {
 	}
 
 	public function __destruct() {
-		$this->logger->notice("Nymph-PubSub server shutting down.");
+		try {
+			$this->logger->notice("Nymph-PubSub server shutting down.");
+		} catch (\Exception $e) {
+			if (strpos($e->getMessage(), 'date.timezone')) {
+				// Already echoed an error about this.
+				exit;
+			}
+			throw $e;
+		}
 		$this->server->removeAllListeners();
 		$this->stop();
 	}

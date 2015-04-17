@@ -5,9 +5,7 @@ use \SciActive\Hook as Hook;
 class HookMethods {
 	public static function setup() {
 		if (!\SciActive\RequirePHP::isdef('NymphPubSubConfig')) {
-			\SciActive\RequirePHP::_('NymphPubSubConfig', [], function(){
-				$defaults = include dirname(__DIR__).'/conf/defaults.php';
-			});
+			\Nymph\PubSub\Server::configure();
 		}
 
 		Hook::addCallback('Nymph->saveEntity', -10, function(&$arguments, $name, &$object, &$function, &$data){
