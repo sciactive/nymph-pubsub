@@ -76,25 +76,29 @@ class HookMethods {
 	}
 
 	public static function sendMessage($message) {
-		$config = \SciActive\RequirePHP::_('NymphPubSubConfig');
+		try {
+			$config = \SciActive\RequirePHP::_('NymphPubSubConfig');
 
-		$loop = \React\EventLoop\Factory::create();
+			$loop = \React\EventLoop\Factory::create();
 
-		$logger = new \Zend\Log\Logger();
-		$writer = new \Zend\Log\Writer\Stream("php://stderr");
-		$logger->addWriter($writer);
+			$logger = new \Zend\Log\Logger();
+			$writer = new \Zend\Log\Writer\Stream("php://stderr");
+			$logger->addWriter($writer);
 
-		foreach ($config['entries'] as $host) {
-			$client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
+			foreach ($config['entries'] as $host) {
+				$client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
 
-			$client->on("connect", function() use ($message, $client){
-				$client->send($message);
-				$client->close();
-			});
+				$client->on("connect", function() use ($message, $client){
+					$client->send($message);
+					$client->close();
+				});
 
-			$client->open();
+				$client->open();
+			}
+
+			$loop->run();
+		} catch (\React\SocketClient\ConnectionException $e) {
+			// Ignore a failed connection.
 		}
-
-		$loop->run();
 	}
 }
