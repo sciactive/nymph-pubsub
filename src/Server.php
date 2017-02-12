@@ -1,6 +1,8 @@
-<?php
-namespace Nymph\PubSub;
+<?php namespace Nymph\PubSub;
+
+use \Devristo\Phpws\Server\UriHandler\ClientRouter;
 use \Devristo\Phpws\Server\WebSocketServer;
+use \SciActive\RequirePHP;
 
 class Server {
   private $loop;
@@ -26,7 +28,7 @@ class Server {
    * @param array $config An associative array of Nymph's configuration.
    */
   public static function configure($config = []) {
-    \SciActive\RequirePHP::_('NymphPubSubConfig', [], function() use ($config){
+    RequirePHP::_('NymphPubSubConfig', [], function () use ($config) {
       $defaults = include dirname(__DIR__).'/conf/defaults.php';
       $nymphConfig = [];
       foreach ($defaults as $curName => $curOption) {
@@ -45,7 +47,7 @@ class Server {
 
   public function __construct($config = []) {
     self::configure($config);
-    $config = \SciActive\RequirePHP::_('NymphPubSubConfig');
+    $config = RequirePHP::_('NymphPubSubConfig');
 
     $this->loop = \React\EventLoop\Factory::create();
 
@@ -56,25 +58,37 @@ class Server {
 
     // Create a WebSocket server using SSL
     try {
-      $this->logger->notice("Nymph-PubSub server starting on {$config['host']}:{$config['port']}.");
+      $this->logger->notice(
+          "Nymph-PubSub server starting on {$config['host']}:{$config['port']}."
+      );
     } catch (\Exception $e) {
       if (strpos($e->getMessage(), 'date.timezone')) {
-        echo "It looks like you haven't set a default timezone. In order to avoid constant complaints from Zend's logger, I'm just going to kill myself now.\n\n";
+        echo "It looks like you haven't set a default timezone. In order to " .
+            "avoid constant complaints from Zend's logger, I'm just going to " .
+            "kill myself now.\n\n";
         echo $e->getMessage()."\n";
         exit;
       }
       throw $e;
     }
-    $this->server = new WebSocketServer("tcp://{$config['host']}:{$config['port']}", $this->loop, $this->logger);
+    $this->server = new WebSocketServer(
+        "tcp://{$config['host']}:{$config['port']}",
+        $this->loop,
+        $this->logger
+    );
 
-    // Create a router which transfers all /chat connections to the MessageHandler class
-    $this->router = new \Devristo\Phpws\Server\UriHandler\ClientRouter($this->server, $this->logger);
+    // Create a router which transfers all /chat connections to the
+    // MessageHandler class
+    $this->router = new ClientRouter($this->server, $this->logger);
 
     // route / url
-    $this->router->addRoute('#^/#i', new MessageHandler($this->logger));
+    $this->router->addRoute('#^/$#i', new MessageHandler($this->logger));
 
     // route unmatched urls
-    $this->router->addRoute('#^(.*)$#i', new MessageHandlerForUnroutedUrls($this->logger));
+    $this->router->addRoute(
+        '#^(.*)$#i',
+        new MessageHandlerForUnroutedUrls($this->logger)
+    );
 
     // Bind the server
     $this->server->bind();

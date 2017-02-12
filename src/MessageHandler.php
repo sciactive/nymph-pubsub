@@ -1,5 +1,5 @@
-<?php
-namespace Nymph\PubSub;
+<?php namespace Nymph\PubSub;
+
 use \Devristo\Phpws\Messaging\WebSocketMessageInterface;
 use \Devristo\Phpws\Protocol\WebSocketTransportInterface;
 use \Devristo\Phpws\Server\UriHandler\WebSocketUriHandler;
@@ -19,7 +19,7 @@ class MessageHandler extends WebSocketUriHandler {
    *
    * @param WebSocketTransportInterface $user
    */
-  public function onConnect(WebSocketTransportInterface $user){
+  public function onConnect(WebSocketTransportInterface $user) {
         $this->logger->notice("Client joined the party! ({$user->getId()})");
   }
 
@@ -240,8 +240,8 @@ class MessageHandler extends WebSocketUriHandler {
    *
    * @param WebSocketTransportInterface $user
    */
-  public function onDisconnect(WebSocketTransportInterface $user){
-        $this->logger->notice("Client skedaddled. ({$user->getId()})");
+  public function onDisconnect(WebSocketTransportInterface $user) {
+    $this->logger->notice("Client skedaddled. ({$user->getId()})");
 
     $mess = 0;
     foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
@@ -319,7 +319,7 @@ class MessageHandler extends WebSocketUriHandler {
     foreach ($config['relays'] as $host) {
       $client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
 
-      $client->on("connect", function() use ($message, $client){
+      $client->on("connect", function () use ($message, $client) {
         $client->send($message);
         $client->close();
       });
