@@ -1,7 +1,8 @@
 <?php namespace Nymph\PubSub;
 
-use \Devristo\Phpws\Server\UriHandler\ClientRouter;
-use \Devristo\Phpws\Server\WebSocketServer;
+use \Ratchet\Server\IoServer;
+use \Ratchet\Http\HttpServer;
+use \Ratchet\WebSocket\WsServer;
 use \SciActive\RequirePHP;
 
 class Server {
@@ -49,7 +50,7 @@ class Server {
     self::configure($config);
     $config = RequirePHP::_('NymphPubSubConfig');
 
-    $this->loop = \React\EventLoop\Factory::create();
+    // $this->loop = \React\EventLoop\Factory::create();
 
     // Create a logger which writes everything to the STDOUT
     $this->logger = new \Zend\Log\Logger();
@@ -71,27 +72,38 @@ class Server {
       }
       throw $e;
     }
-    $this->server = new WebSocketServer(
-        "tcp://{$config['host']}:{$config['port']}",
-        $this->loop,
-        $this->logger
+    // $this->server = new WebSocketServer(
+    //     "tcp://{$config['host']}:{$config['port']}",
+    //     $this->loop,
+    //     $this->logger
+    // );
+    //
+    // $server->run();
+    //
+    // // Create a router which transfers all /chat connections to the
+    // // MessageHandler class
+    // $this->router = new ClientRouter($this->server, $this->logger);
+    //
+    // // route / url
+    // $this->router->addRoute('#^/$#i', new MessageHandler($this->logger));
+    //
+    // // route unmatched urls
+    // $this->router->addRoute(
+    //     '#^(.*)$#i',
+    //     new MessageHandlerForUnroutedUrls($this->logger)
+    // );
+    //
+    // // Bind the server
+    // $this->server->bind();
+
+    $this->server = IoServer::factory(
+        new HttpServer(
+            new WsServer(
+                new MessageHandler()
+            )
+        ),
+        $config['port']
     );
-
-    // Create a router which transfers all /chat connections to the
-    // MessageHandler class
-    $this->router = new ClientRouter($this->server, $this->logger);
-
-    // route / url
-    $this->router->addRoute('#^/$#i', new MessageHandler($this->logger));
-
-    // route unmatched urls
-    $this->router->addRoute(
-        '#^(.*)$#i',
-        new MessageHandlerForUnroutedUrls($this->logger)
-    );
-
-    // Bind the server
-    $this->server->bind();
   }
 
   public function __destruct() {
@@ -104,17 +116,17 @@ class Server {
       }
       throw $e;
     }
-    $this->server->removeAllListeners();
+    // $this->server->removeAllListeners();
     $this->stop();
   }
 
   public function run() {
     // Start the event loop
-    $this->loop->run();
+    $this->server->run();
   }
 
   public function stop() {
     // Stop the event loop
-    $this->loop->stop();
+    // $this->loop->stop();
   }
 }

@@ -1,14 +1,13 @@
 <?php namespace Nymph\PubSub;
 
-use \Devristo\Phpws\Messaging\WebSocketMessageInterface;
-use \Devristo\Phpws\Protocol\WebSocketTransportInterface;
-use \Devristo\Phpws\Server\UriHandler\WebSocketUriHandler;
+use \Ratchet\MessageComponentInterface;
+use \Ratchet\ConnectionInterface;
 use \SciActive\RequirePHP as RequirePHP;
 
 /**
  * Handle subscriptions and publications.
  */
-class MessageHandler extends WebSocketUriHandler {
+class MessageHandler extends MessageComponentInterface {
   protected $subscriptions = [
     'queries' => [],
     'uids' => []
@@ -17,20 +16,21 @@ class MessageHandler extends WebSocketUriHandler {
   /**
    * Log users who join.
    *
-   * @param WebSocketTransportInterface $user
+   * @param ConnectionInterface $user
    */
-  public function onConnect(WebSocketTransportInterface $user) {
-        $this->logger->notice("Client joined the party! ({$user->getId()})");
+  public function onOpen(ConnectionInterface $user) {
+    var_dump($user);
+    $this->logger->notice("Client joined the party! ({$user->getId()})");
   }
 
   /**
    * Handle a message from a client.
    *
-   * @param WebSocketTransportInterface $user
-   * @param WebSocketMessageInterface $msg
+   * @param ConnectionInterface $user
+   * @param string $msg
    */
-  public function onMessage(WebSocketTransportInterface $user, WebSocketMessageInterface $msg) {
-    $data = json_decode($msg->getData(), true);
+  public function onMessage(ConnectionInterface $user, $msg) {
+    $data = json_decode($msg, true);
     if (!$data['action'] || !in_array($data['action'], ['subscribe', 'unsubscribe', 'publish'])) {
       return;
     }
@@ -163,7 +163,7 @@ class MessageHandler extends WebSocketUriHandler {
         ) {
           $this->logger->notice("Received an entity publish! ({$data['guid']}, {$data['event']}, {$user->getId()})");
           // Relay the publish to other servers.
-          $this->relay($msg->getData());
+          $this->relay($msg);
           foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
             if ($data['event'] === 'delete' || $data['event'] === 'update') {
               // Check if it is in any queries' currents.
@@ -220,7 +220,7 @@ class MessageHandler extends WebSocketUriHandler {
         } elseif ((isset($data['name']) || (isset($data['oldName']) && isset($data['newName']))) && in_array($data['event'], ['newUID', 'setUID', 'renameUID', 'deleteUID'])) {
           $this->logger->notice("Received a UID publish! (".(isset($data['name']) ? $data['name'] : "{$data['oldName']} => {$data['newName']}").", {$data['event']}, {$user->getId()})");
           // Relay the publish to other servers.
-          $this->relay($msg->getData());
+          $this->relay($msg);
           foreach ($data as $key => $name) {
             if (!in_array($key, ['name', 'newName', 'oldName']) || !key_exists($name, $this->subscriptions['uids'])) {
               continue;
@@ -238,9 +238,9 @@ class MessageHandler extends WebSocketUriHandler {
   /**
    * Clean up after users who leave.
    *
-   * @param WebSocketTransportInterface $user
+   * @param ConnectionInterface $user
    */
-  public function onDisconnect(WebSocketTransportInterface $user) {
+  public function onClose(ConnectionInterface $user) {
     $this->logger->notice("Client skedaddled. ({$user->getId()})");
 
     $mess = 0;
@@ -296,6 +296,10 @@ class MessageHandler extends WebSocketUriHandler {
     if ($mess) {
       $this->logger->notice("Cleaned up client's mess. ($mess, {$user->getId()})");
     }
+  }
+
+  public function onError(ConnectionInterface $user, \Exception $e) {
+    $this->logger->error("An error occured. ({$e->getMessage()})");
   }
 
   /**
