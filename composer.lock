@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "5de69d821ab0d20f71e6b169054a274f",
-    "content-hash": "22bc8b9cf5f76eb70398fb26ad200d12",
+    "hash": "a364ed2bede2fec46741f7798d82f44f",
+    "content-hash": "649e6fbc509fb4752f593efa27d90bf5",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -309,12 +309,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/event-loop.git",
-                "reference": "55e12c2c5b648266813fe3157b3bb9e4f2bb6fc9"
+                "reference": "d6e47c54ee152d1b321987b9ba9ae90bf18dff59"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/55e12c2c5b648266813fe3157b3bb9e4f2bb6fc9",
-                "reference": "55e12c2c5b648266813fe3157b3bb9e4f2bb6fc9",
+                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/d6e47c54ee152d1b321987b9ba9ae90bf18dff59",
+                "reference": "d6e47c54ee152d1b321987b9ba9ae90bf18dff59",
                 "shasum": ""
             },
             "require": {
@@ -343,7 +343,7 @@
                 "asynchronous",
                 "event-loop"
             ],
-            "time": "2017-02-08 19:15:25"
+            "time": "2017-02-12 22:11:33"
         },
         {
             "name": "react/promise",
@@ -390,16 +390,16 @@
         },
         {
             "name": "react/socket",
-            "version": "dev-master",
+            "version": "0.4.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/socket.git",
-                "reference": "9b3eba6e4983d27a81bce429d69145b4f632d53f"
+                "reference": "cf074e53c974df52388ebd09710a9018894745d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/socket/zipball/9b3eba6e4983d27a81bce429d69145b4f632d53f",
-                "reference": "9b3eba6e4983d27a81bce429d69145b4f632d53f",
+                "url": "https://api.github.com/repos/reactphp/socket/zipball/cf074e53c974df52388ebd09710a9018894745d2",
+                "reference": "cf074e53c974df52388ebd09710a9018894745d2",
                 "shasum": ""
             },
             "require": {
@@ -409,12 +409,12 @@
                 "react/promise": "^2.0 || ^1.1",
                 "react/stream": "^0.4.5"
             },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.4-dev"
-                }
+            "require-dev": {
+                "clue/block-react": "^1.1",
+                "phpunit/phpunit": "~4.8",
+                "react/socket-client": "^0.5.1"
             },
+            "type": "library",
             "autoload": {
                 "psr-4": {
                     "React\\Socket\\": "src"
@@ -424,11 +424,11 @@
             "license": [
                 "MIT"
             ],
-            "description": "Library for building an evented socket server.",
+            "description": "Async, streaming plaintext TCP/IP and secure TLS socket server for React PHP",
             "keywords": [
                 "Socket"
             ],
-            "time": "2015-08-07 19:59:11"
+            "time": "2017-01-26 09:23:38"
         },
         {
             "name": "react/stream",
@@ -520,16 +520,16 @@
         },
         {
             "name": "sciactive/nymph-server",
-            "version": "dev-master",
+            "version": "dev-cleanup",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sciactive/nymph-server.git",
-                "reference": "2cb564ba8883480bceb5cc0d09f184d982d04e08"
+                "reference": "204375d306d9521a3afe78c61d65399e551c07d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/2cb564ba8883480bceb5cc0d09f184d982d04e08",
-                "reference": "2cb564ba8883480bceb5cc0d09f184d982d04e08",
+                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/204375d306d9521a3afe78c61d65399e551c07d3",
+                "reference": "204375d306d9521a3afe78c61d65399e551c07d3",
                 "shasum": ""
             },
             "require": {
@@ -571,7 +571,7 @@
                 "postgres",
                 "postgresql"
             ],
-            "time": "2016-07-02 22:39:54"
+            "time": "2017-02-10 22:59:26"
         },
         {
             "name": "sciactive/requirephp",
@@ -688,12 +688,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-foundation.git",
-                "reference": "5cfc9912c07785349901bd69b46423b11f878f2c"
+                "reference": "737aa3e24c17c6ffd8685abedada20e75922a223"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/5cfc9912c07785349901bd69b46423b11f878f2c",
-                "reference": "5cfc9912c07785349901bd69b46423b11f878f2c",
+                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/737aa3e24c17c6ffd8685abedada20e75922a223",
+                "reference": "737aa3e24c17c6ffd8685abedada20e75922a223",
                 "shasum": ""
             },
             "require": {
@@ -733,7 +733,7 @@
             ],
             "description": "Symfony HttpFoundation Component",
             "homepage": "https://symfony.com",
-            "time": "2017-02-02 13:49:58"
+            "time": "2017-02-12 19:33:56"
         },
         {
             "name": "symfony/polyfill-mbstring",
@@ -800,12 +800,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/routing.git",
-                "reference": "885a0f795f436d488257eb489b59c1d91e90513a"
+                "reference": "bd04b3246221603b37264636a5058a2b5e56ce0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/routing/zipball/885a0f795f436d488257eb489b59c1d91e90513a",
-                "reference": "885a0f795f436d488257eb489b59c1d91e90513a",
+                "url": "https://api.github.com/repos/symfony/routing/zipball/bd04b3246221603b37264636a5058a2b5e56ce0c",
+                "reference": "bd04b3246221603b37264636a5058a2b5e56ce0c",
                 "shasum": ""
             },
             "require": {
@@ -867,7 +867,7 @@
                 "uri",
                 "url"
             ],
-            "time": "2017-01-28 02:39:08"
+            "time": "2017-02-12 19:14:59"
         }
     ],
     "packages-dev": [],
