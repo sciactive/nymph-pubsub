@@ -2,36 +2,46 @@
 
 use \Ratchet\MessageComponentInterface;
 use \Ratchet\ConnectionInterface;
-use \SciActive\RequirePHP as RequirePHP;
+use \SciActive\RequirePHP;
+use \WebSocket\Client as TextalkWebSocketClient;
 
 /**
  * Handle subscriptions and publications.
  */
-class MessageHandler extends MessageComponentInterface {
+class MessageHandler implements MessageComponentInterface {
+  private $logger;
   protected $subscriptions = [
     'queries' => [],
     'uids' => []
   ];
 
+  public function __construct(\Zend\Log\Logger $logger) {
+    $this->logger = $logger;
+  }
+
   /**
    * Log users who join.
    *
-   * @param ConnectionInterface $user
+   * @param ConnectionInterface $conn
    */
-  public function onOpen(ConnectionInterface $user) {
-    var_dump($user);
-    $this->logger->notice("Client joined the party! ({$user->getId()})");
+  public function onOpen(ConnectionInterface $conn) {
+    // var_dump($conn);
+    $this->logger->notice("Client joined the party! ({$conn->resourceId})");
   }
 
   /**
    * Handle a message from a client.
    *
-   * @param ConnectionInterface $user
+   * @param ConnectionInterface $from
    * @param string $msg
    */
-  public function onMessage(ConnectionInterface $user, $msg) {
+  public function onMessage(ConnectionInterface $from, $msg) {
     $data = json_decode($msg, true);
-    if (!$data['action'] || !in_array($data['action'], ['subscribe', 'unsubscribe', 'publish'])) {
+    if (!$data['action']
+        || !in_array(
+            $data['action'],
+            ['subscribe', 'unsubscribe', 'publish']
+        )) {
       return;
     }
     switch ($data['action']) {
@@ -62,20 +72,36 @@ class MessageHandler extends MessageComponentInterface {
               $guidArgs = $args;
               $guidArgs[0]['return'] = 'guid';
               $this->subscriptions['queries'][$serialArgs] = [
-                'current' => call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs)
+                'current' => call_user_func_array(
+                    "\Nymph\Nymph::getEntities",
+                    $guidArgs
+                )
               ];
             }
-            $this->subscriptions['queries'][$serialArgs][] = ['client' => $user, 'query' => $data['query'], 'count' => !!$data['count']];
-            $this->logger->notice("Client subscribed to a query! ($serialArgs, {$user->getId()})");
+            $this->subscriptions['queries'][$serialArgs][] =
+                [
+                  'client' => $from,
+                  'query' => $data['query'],
+                  'count' => !!$data['count']
+                ];
+            $this->logger->notice(
+                "Client subscribed to a query! " .
+                    "($serialArgs, {$from->resourceId})"
+            );
             if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
               // Notify clients of the subscription count.
               $count = count($this->subscriptions['queries'][$serialArgs]) - 1;
-              foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
+              foreach ($this->subscriptions['queries'][$serialArgs] as
+                  $key => $curClient) {
                 if ($key === 'current') {
                   continue;
                 }
                 if ($curClient['count']) {
-                  $curClient['client']->sendString(json_encode(['query' => $curClient['query'], 'count' => $count]));
+                  $curClient['client']->send(
+                      json_encode(
+                          ['query' => $curClient['query'], 'count' => $count]
+                      )
+                  );
                 }
               }
             }
@@ -83,22 +109,36 @@ class MessageHandler extends MessageComponentInterface {
             if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
               return;
             }
-            foreach ($this->subscriptions['queries'][$serialArgs] as $key => $value) {
+            foreach ($this->subscriptions['queries'][$serialArgs] as
+                $key => $value) {
               if ($key === 'current') {
                 continue;
               }
-              if ($user->getId() === $value['client']->getId() && $data['query'] === $value['query']) {
+              if ($from->resourceId === $value['client']->resourceId
+                  && $data['query'] === $value['query']) {
                 unset($this->subscriptions['queries'][$serialArgs][$key]);
-                $this->logger->notice("Client unsubscribed from a query! ($serialArgs, {$user->getId()})");
+                $this->logger->notice(
+                    "Client unsubscribed from a query! ".
+                        "($serialArgs, {$from->resourceId})"
+                );
                 if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
                   // Notify clients of the subscription count.
-                  $count = count($this->subscriptions['queries'][$serialArgs]) - 1;
-                  foreach ($this->subscriptions['queries'][$serialArgs] as $key => $curClient) {
+                  $count =
+                      count($this->subscriptions['queries'][$serialArgs]) - 1;
+                  foreach ($this->subscriptions['queries'][$serialArgs] as
+                      $key => $curClient) {
                     if ($key === 'current') {
                       continue;
                     }
                     if ($curClient['count']) {
-                      $curClient['client']->sendString(json_encode(['query' => $curClient['query'], 'count' => $count]));
+                      $curClient['client']->send(
+                          json_encode(
+                              [
+                                'query' => $curClient['query'],
+                                'count' => $count
+                              ]
+                          )
+                      );
                     }
                   }
                 }
@@ -113,14 +153,23 @@ class MessageHandler extends MessageComponentInterface {
             if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
               $this->subscriptions['uids'][$data['uid']] = [];
             }
-            $this->subscriptions['uids'][$data['uid']][] = ['client' => $user, 'count' => !!$data['count']];
-            $this->logger->notice("Client subscribed to a UID! ({$data['uid']}, {$user->getId()})");
+            $this->subscriptions['uids'][$data['uid']][] =
+                ['client' => $from, 'count' => !!$data['count']];
+            $this->logger->notice(
+                "Client subscribed to a UID! " .
+                    "({$data['uid']}, {$from->resourceId})"
+            );
             if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
               // Notify clients of the subscription count.
               $count = count($this->subscriptions['uids'][$data['uid']]);
-              foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
+              foreach ($this->subscriptions['uids'][$data['uid']] as
+                  $curClient) {
                 if ($curClient['count']) {
-                  $curClient['client']->sendString(json_encode(['uid' => $data['uid'], 'count' => $count]));
+                  $curClient['client']->send(
+                      json_encode(
+                          ['uid' => $data['uid'], 'count' => $count]
+                      )
+                  );
                 }
               }
             }
@@ -128,16 +177,25 @@ class MessageHandler extends MessageComponentInterface {
             if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
               return;
             }
-            foreach ($this->subscriptions['uids'][$data['uid']] as $key => $value) {
-              if ($user->getId() === $value['client']->getId()) {
+            foreach ($this->subscriptions['uids'][$data['uid']] as
+                $key => $value) {
+              if ($from->resourceId === $value['client']->resourceId) {
                 unset($this->subscriptions['uids'][$data['uid']][$key]);
-                $this->logger->notice("Client unsubscribed from a UID! ({$data['uid']}, {$user->getId()})");
+                $this->logger->notice(
+                    "Client unsubscribed from a UID! " .
+                        "({$data['uid']}, {$from->resourceId})"
+                );
                 if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
                   // Notify clients of the subscription count.
                   $count = count($this->subscriptions['uids'][$data['uid']]);
-                  foreach ($this->subscriptions['uids'][$data['uid']] as $curClient) {
+                  foreach ($this->subscriptions['uids'][$data['uid']] as
+                      $curClient) {
                     if ($curClient['count']) {
-                      $curClient['client']->sendString(json_encode(['uid' => $data['uid'], 'count' => $count]));
+                      $curClient['client']->send(
+                          json_encode(
+                              ['uid' => $data['uid'], 'count' => $count]
+                          )
+                      );
                     }
                   }
                 }
@@ -151,34 +209,45 @@ class MessageHandler extends MessageComponentInterface {
         }
         break;
       case 'publish':
-        if (
-            isset($data['guid']) &&
-            (
-              $data['event'] === 'delete' ||
-              (
-                isset($data['entity']) &&
-                ($data['event'] === 'create' || $data['event'] === 'update')
+        if (isset($data['guid'])
+            && (
+              $data['event'] === 'delete'
+              || (
+                isset($data['entity'])
+                && ($data['event'] === 'create' || $data['event'] === 'update')
               )
-            )
-        ) {
-          $this->logger->notice("Received an entity publish! ({$data['guid']}, {$data['event']}, {$user->getId()})");
+            )) {
+          $this->logger->notice(
+              "Received an entity publish! " .
+                  "({$data['guid']}, {$data['event']}, {$from->resourceId})"
+          );
           // Relay the publish to other servers.
           $this->relay($msg);
-          foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
+          foreach ($this->subscriptions['queries'] as
+              $curQuery => &$curClients) {
             if ($data['event'] === 'delete' || $data['event'] === 'update') {
               // Check if it is in any queries' currents.
               if (in_array($data['guid'], $curClients['current'])) {
                 // Update currents list.
                 $guidArgs = unserialize($curQuery);
                 $guidArgs[0]['return'] = 'guid';
-                $curClients['current'] = call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs);
+                $curClients['current'] =
+                    call_user_func_array(
+                        "\Nymph\Nymph::getEntities",
+                        $guidArgs
+                    );
                 // Notify subscribers.
                 foreach ($curClients as $key => $curClient) {
                   if ($key === 'current') {
                     continue;
                   }
-                  $this->logger->notice("Notifying client of modification! ({$curClient['client']->getId()})");
-                  $curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
+                  $this->logger->notice(
+                      "Notifying client of modification! " .
+                          "({$curClient['client']->resourceId})"
+                  );
+                  $curClient['client']->send(
+                      json_encode(['query' => $curClient['query']])
+                  );
                 }
                 continue;
               }
@@ -194,11 +263,22 @@ class MessageHandler extends MessageComponentInterface {
               $entityData['mdate'] = $data['entity']['mdate'];
               $entitySData = [];
 
-              if ($options['class'] === $data['entity']['class'] && \Nymph\Nymph::checkData($entityData, $entitySData, $selectors, $data['guid'], $data['entity']['tags'])) {
+              if ($options['class'] === $data['entity']['class']
+                  && \Nymph\Nymph::checkData(
+                      $entityData,
+                      $entitySData,
+                      $selectors,
+                      $data['guid'],
+                      $data['entity']['tags']
+                  )) {
                 // Update currents list.
                 $guidArgs = unserialize($curQuery);
                 $guidArgs[0]['return'] = 'guid';
-                $curClients['current'] = call_user_func_array("\Nymph\Nymph::getEntities", $guidArgs);
+                $curClients['current'] =
+                    call_user_func_array(
+                        "\Nymph\Nymph::getEntities",
+                        $guidArgs
+                    );
                 // If we're here, it means the query didn't
                 // match the entity before, and now it does. We
                 // could check currents to see if it's been
@@ -210,24 +290,48 @@ class MessageHandler extends MessageComponentInterface {
                   if ($key === 'current') {
                     continue;
                   }
-                  $this->logger->notice("Notifying client of new match! ({$curClient['client']->getId()})");
-                  $curClient['client']->sendString(json_encode(['query' => $curClient['query']]));
+                  $this->logger->notice(
+                      "Notifying client of new match! " .
+                          "({$curClient['client']->resourceId})"
+                  );
+                  $curClient['client']->send(
+                      json_encode(['query' => $curClient['query']])
+                  );
                 }
               }
             }
           }
           unset($curClients);
-        } elseif ((isset($data['name']) || (isset($data['oldName']) && isset($data['newName']))) && in_array($data['event'], ['newUID', 'setUID', 'renameUID', 'deleteUID'])) {
-          $this->logger->notice("Received a UID publish! (".(isset($data['name']) ? $data['name'] : "{$data['oldName']} => {$data['newName']}").", {$data['event']}, {$user->getId()})");
+        } elseif ((
+              isset($data['name'])
+              || (isset($data['oldName']) && isset($data['newName']))
+            )
+            && in_array(
+                $data['event'],
+                ['newUID', 'setUID', 'renameUID', 'deleteUID']
+            )) {
+          $this->logger->notice(
+              "Received a UID publish! (" .
+                  (
+                    isset($data['name'])
+                        ? $data['name']
+                        : "{$data['oldName']} => {$data['newName']}"
+                  ) .
+                  ", {$data['event']}, {$from->resourceId})"
+          );
           // Relay the publish to other servers.
           $this->relay($msg);
           foreach ($data as $key => $name) {
-            if (!in_array($key, ['name', 'newName', 'oldName']) || !key_exists($name, $this->subscriptions['uids'])) {
+            if (!in_array($key, ['name', 'newName', 'oldName'])
+                || !key_exists($name, $this->subscriptions['uids'])) {
               continue;
             }
             foreach ($this->subscriptions['uids'][$name] as $curClient) {
-              $this->logger->notice("Notifying client of {$data['event']}! ($name, {$curClient['client']->getId()})");
-              $curClient['client']->sendString(json_encode(['uid' => $name]));
+              $this->logger->notice(
+                  "Notifying client of {$data['event']}! " .
+                      "($name, {$curClient['client']->resourceId})"
+              );
+              $curClient['client']->send(json_encode(['uid' => $name]));
             }
           }
         }
@@ -238,10 +342,10 @@ class MessageHandler extends MessageComponentInterface {
   /**
    * Clean up after users who leave.
    *
-   * @param ConnectionInterface $user
+   * @param ConnectionInterface $conn
    */
-  public function onClose(ConnectionInterface $user) {
-    $this->logger->notice("Client skedaddled. ({$user->getId()})");
+  public function onClose(ConnectionInterface $conn) {
+    $this->logger->notice("Client skedaddled. ({$conn->resourceId})");
 
     $mess = 0;
     foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
@@ -249,7 +353,7 @@ class MessageHandler extends MessageComponentInterface {
         if ($key === 'current') {
           continue;
         }
-        if ($user->getId() === $curClient['client']->getId()) {
+        if ($conn->resourceId === $curClient['client']->resourceId) {
           unset($curClients[$key]);
           if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
             // Notify clients of the subscription count.
@@ -259,7 +363,14 @@ class MessageHandler extends MessageComponentInterface {
                 continue;
               }
               if ($curCountClient['count']) {
-                $curCountClient['client']->sendString(json_encode(['query' => $curCountClient['query'], 'count' => $count]));
+                $curCountClient['client']->send(
+                    json_encode(
+                        [
+                          'query' => $curCountClient['query'],
+                          'count' => $count
+                        ]
+                    )
+                );
               }
             }
           }
@@ -273,14 +384,16 @@ class MessageHandler extends MessageComponentInterface {
     unset($curClients);
     foreach ($this->subscriptions['uids'] as $curUID => &$curClients) {
       foreach ($curClients as $key => $curClient) {
-        if ($user->getId() === $curClient['client']->getId()) {
+        if ($conn->resourceId === $curClient['client']->resourceId) {
           unset($curClients[$key]);
           if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
             // Notify clients of the subscription count.
             $count = count($curClients);
             foreach ($curClients as $curCountClient) {
               if ($curCountClient['count']) {
-                $curCountClient['client']->sendString(json_encode(['uid' => $curUID, 'count' => $count]));
+                $curCountClient['client']->send(
+                    json_encode(['uid' => $curUID, 'count' => $count])
+                );
               }
             }
           }
@@ -294,11 +407,14 @@ class MessageHandler extends MessageComponentInterface {
     unset($curClients);
 
     if ($mess) {
-      $this->logger->notice("Cleaned up client's mess. ($mess, {$user->getId()})");
+      $this->logger->notice(
+          "Cleaned up client's mess. " .
+              "($mess, {$conn->resourceId})"
+      );
     }
   }
 
-  public function onError(ConnectionInterface $user, \Exception $e) {
+  public function onError(ConnectionInterface $conn, \Exception $e) {
     $this->logger->error("An error occured. ({$e->getMessage()})");
   }
 
@@ -314,23 +430,9 @@ class MessageHandler extends MessageComponentInterface {
       return;
     }
 
-    $loop = \React\EventLoop\Factory::create();
-
-    $logger = new \Zend\Log\Logger();
-    $writer = new \Zend\Log\Writer\Stream("php://stderr");
-    $logger->addWriter($writer);
-
     foreach ($config['relays'] as $host) {
-      $client = new \Devristo\Phpws\Client\WebSocket($host, $loop, $logger);
-
-      $client->on("connect", function () use ($message, $client) {
-        $client->send($message);
-        $client->close();
-      });
-
-      $client->open();
+      $client = new TextalkWebSocketClient($host);
+      $client->send($message);
     }
-
-    $loop->run();
   }
 }

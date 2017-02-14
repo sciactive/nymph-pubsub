@@ -6,10 +6,8 @@ use \Ratchet\WebSocket\WsServer;
 use \SciActive\RequirePHP;
 
 class Server {
-  private $loop;
   private $logger;
   private $writer;
-  private $router;
   private $server;
 
   /**
@@ -50,8 +48,6 @@ class Server {
     self::configure($config);
     $config = RequirePHP::_('NymphPubSubConfig');
 
-    // $this->loop = \React\EventLoop\Factory::create();
-
     // Create a logger which writes everything to the STDOUT
     $this->logger = new \Zend\Log\Logger();
     $this->writer = new \Zend\Log\Writer\Stream("php://output");
@@ -72,37 +68,15 @@ class Server {
       }
       throw $e;
     }
-    // $this->server = new WebSocketServer(
-    //     "tcp://{$config['host']}:{$config['port']}",
-    //     $this->loop,
-    //     $this->logger
-    // );
-    //
-    // $server->run();
-    //
-    // // Create a router which transfers all /chat connections to the
-    // // MessageHandler class
-    // $this->router = new ClientRouter($this->server, $this->logger);
-    //
-    // // route / url
-    // $this->router->addRoute('#^/$#i', new MessageHandler($this->logger));
-    //
-    // // route unmatched urls
-    // $this->router->addRoute(
-    //     '#^(.*)$#i',
-    //     new MessageHandlerForUnroutedUrls($this->logger)
-    // );
-    //
-    // // Bind the server
-    // $this->server->bind();
 
     $this->server = IoServer::factory(
         new HttpServer(
             new WsServer(
-                new MessageHandler()
+                new MessageHandler($this->logger)
             )
         ),
-        $config['port']
+        $config['port'],
+        $config['host']
     );
   }
 
@@ -116,7 +90,6 @@ class Server {
       }
       throw $e;
     }
-    // $this->server->removeAllListeners();
     $this->stop();
   }
 

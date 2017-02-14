@@ -52,7 +52,7 @@
 		"sciactive/requirephp": "~1.3",
 		"cboden/ratchet": "0.3.*",
     "zendframework/zend-log": "2.*",
-		"devristo/phpws": "dev-master"
+		"textalk/websocket": "1.0.*"
 	},
 	"minimum-stability": "dev",
 	"maybe-require-idk": {
