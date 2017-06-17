@@ -1,8 +1,8 @@
 {
 	"name": "sciactive/nymph-pubsub",
 	"description": "A library for publishing/subscribing to Nymph database changes.",
-	"version": "1.4.3",
-	"time": "2015-09-02",
+	"version": "1.5.0",
+	"time": "2017-06-16",
 	"homepage": "http://nymph.io/",
 	"type": "library",
 	"authors": [
@@ -47,7 +47,7 @@
 		}
 	],
 	"require": {
-		"sciactive/nymph-server": "dev-cleanup",
+		"sciactive/nymph-server": "~1.5.0",
 		"sciactive/hookphp": "~1.1",
 		"sciactive/requirephp": "~1.3",
 		"cboden/ratchet": "0.3.*",

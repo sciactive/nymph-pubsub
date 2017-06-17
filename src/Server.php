@@ -90,16 +90,10 @@ class Server {
       }
       throw $e;
     }
-    $this->stop();
   }
 
   public function run() {
     // Start the event loop
     $this->server->run();
-  }
-
-  public function stop() {
-    // Stop the event loop
-    // $this->loop->stop();
   }
 }
