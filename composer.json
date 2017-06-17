@@ -20,7 +20,7 @@
 		"publish",
 		"subscribe"
 	],
-	"license": "LGPL",
+	"license": "Apache-2.0",
 	"support": {
 		"issues": "https://github.com/sciactive/nymph/issues",
 		"wiki": "https://github.com/sciactive/nymph/wiki",
