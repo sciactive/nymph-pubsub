@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "556f2a3c03072a8f5c3223564445941d",
-    "content-hash": "b217fc627bcaedd7634899d75c8fd122",
+    "hash": "9897a0c9631b24898deaf7d3b15ad75d",
+    "content-hash": "f76c40e4a8997797630f2c9afb832830",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -650,16 +650,16 @@
         },
         {
             "name": "sciactive/nymph-server",
-            "version": "1.5.0",
+            "version": "1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sciactive/nymph-server.git",
-                "reference": "81b0117d2c3d840d985b41db0a8851eb08b4fa51"
+                "reference": "5c9e5374a11363a26e11880a952570bef9dba276"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/81b0117d2c3d840d985b41db0a8851eb08b4fa51",
-                "reference": "81b0117d2c3d840d985b41db0a8851eb08b4fa51",
+                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/5c9e5374a11363a26e11880a952570bef9dba276",
+                "reference": "5c9e5374a11363a26e11880a952570bef9dba276",
                 "shasum": ""
             },
             "require": {
@@ -680,7 +680,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "LGPL"
+                "Apache-2.0"
             ],
             "authors": [
                 {
