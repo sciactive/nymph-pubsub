@@ -415,7 +415,7 @@ class MessageHandler implements MessageComponentInterface {
   }
 
   public function onError(ConnectionInterface $conn, \Exception $e) {
-    $this->logger->error("An error occured. ({$e->getMessage()})");
+    $this->logger->err("An error occured. ({$e->getMessage()})");
   }
 
   /**
