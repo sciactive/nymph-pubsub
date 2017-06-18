@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "709726f26eb854ffe5987358757bce10",
-    "content-hash": "69b00cfdd29cc0617f2409558a39cf33",
+    "hash": "fdc24ce380749678a1b7082ddcf89de8",
+    "content-hash": "97f837bf04353ffc12b42632a3f3f2e3",
     "packages": [
         {
             "name": "cboden/ratchet",
