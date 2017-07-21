@@ -1,8 +1,8 @@
 {
 	"name": "sciactive/nymph-pubsub",
 	"description": "A library for publishing/subscribing to Nymph database changes.",
-	"version": "1.5.5",
-	"time": "2017-06-18",
+	"version": "1.6.0",
+	"time": "2017-07-21",
 	"homepage": "http://nymph.io/",
 	"type": "library",
 	"authors": [
@@ -40,14 +40,8 @@
 			"Nymph\\PubSub\\": "src/"
 		}
 	},
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/Devristo/phpws"
-		}
-	],
 	"require": {
-		"sciactive/nymph-server": "~1.5.4",
+		"sciactive/nymph-server": "~1.6.0",
 		"sciactive/hookphp": "~2.0",
 		"sciactive/requirephp": "~1.3",
 		"cboden/ratchet": "0.3.*",
