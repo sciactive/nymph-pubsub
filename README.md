@@ -36,12 +36,12 @@ require 'vendor/autoload.php';
 // Set up Nymph.
 use Nymph\Nymph;
 Nymph::configure([
-	'MySQL' => [
-		'host' => 'your_db_host',
-		'database' => 'your_database',
-		'user' => 'your_user',
-		'password' => 'your_password'
-	]
+  'MySQL' => [
+    'host' => 'your_db_host',
+    'database' => 'your_database',
+    'user' => 'your_user',
+    'password' => 'your_password'
+  ]
 ]);
 
 \Nymph\Nymph::connect();
