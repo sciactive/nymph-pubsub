@@ -13,7 +13,7 @@ class HookMethods {
         'Nymph->saveEntity',
         -10,
         function (&$arguments, $name, &$object, &$function, &$data) {
-          $data['entity'] = $arguments[0];
+          $data['entity'] = &$arguments[0];
           $data['guid'] = $arguments[0]->guid;
         }
     );

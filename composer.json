@@ -41,8 +41,8 @@
 		}
 	},
 	"require": {
-		"sciactive/nymph-server": "~1.6.0",
-		"sciactive/hookphp": "~2.0",
+		"sciactive/nymph-server": "~2.2.0",
+		"sciactive/hookphp": "~2.0.2",
 		"sciactive/requirephp": "~1.3",
 		"cboden/ratchet": "0.3.*",
     "zendframework/zend-log": "2.*",

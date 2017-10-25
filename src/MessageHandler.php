@@ -25,7 +25,6 @@ class MessageHandler implements MessageComponentInterface {
    * @param ConnectionInterface $conn
    */
   public function onOpen(ConnectionInterface $conn) {
-    // var_dump($conn);
     $this->logger->notice("Client joined the party! ({$conn->resourceId})");
   }
 
@@ -59,14 +58,9 @@ class MessageHandler implements MessageComponentInterface {
               $args[$i] = $newArg;
             }
           }
-          if (count($args) > 1) {
-            $options = $args[0];
-            unset($args[0]);
-            \Nymph\Nymph::formatSelectors($args);
-            $args = array_merge([$options], $args);
-          }
-          $args[0]['skip_ac'] = true;
           $serialArgs = serialize($args);
+          $this->prepareSelectors($args);
+          $args[0]['skip_ac'] = true;
           if ($data['action'] === 'subscribe') {
             if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
               $guidArgs = $args;
@@ -230,6 +224,7 @@ class MessageHandler implements MessageComponentInterface {
               if (in_array($data['guid'], $curClients['current'])) {
                 // Update currents list.
                 $guidArgs = unserialize($curQuery);
+                $this->prepareSelectors($guidArgs);
                 $guidArgs[0]['return'] = 'guid';
                 $curClients['current'] =
                     call_user_func_array(
@@ -256,6 +251,7 @@ class MessageHandler implements MessageComponentInterface {
             if ($data['event'] === 'create' || $data['event'] === 'update') {
               // Check if it matches any queries.
               $selectors = unserialize($curQuery);
+              $this->prepareSelectors($selectors);
               $options = $selectors[0];
               unset($selectors[0]);
               $entityData = $data['entity']['data'];
@@ -273,6 +269,7 @@ class MessageHandler implements MessageComponentInterface {
                   )) {
                 // Update currents list.
                 $guidArgs = unserialize($curQuery);
+                $this->prepareSelectors($guidArgs);
                 $guidArgs[0]['return'] = 'guid';
                 $curClients['current'] =
                     call_user_func_array(
@@ -433,6 +430,18 @@ class MessageHandler implements MessageComponentInterface {
     foreach ($config['relays'] as $host) {
       $client = new TextalkWebSocketClient($host);
       $client->send($message);
+    }
+  }
+
+  private function prepareSelectors(&$selectors) {
+    if (count($selectors) > 1) {
+      $options = $selectors[0];
+      unset($selectors[0]);
+      // formatSelectors will modify relative time clauses, so this needs to be
+      // done when testing entities/making queries, etc, but not saved as the
+      // query the user is subscribed to.
+      \Nymph\Nymph::formatSelectors($selectors);
+      $selectors = array_merge([$options], $selectors);
     }
   }
 }
