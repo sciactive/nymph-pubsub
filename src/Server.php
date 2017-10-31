@@ -69,15 +69,17 @@ class Server {
       throw $e;
     }
 
+    $wsServer = new WsServer(new MessageHandler($this->logger));
+
     $this->server = IoServer::factory(
         new HttpServer(
-            new WsServer(
-                new MessageHandler($this->logger)
-            )
+            $wsServer
         ),
         $config['port'],
         $config['host']
     );
+
+    $wsServer->enableKeepAlive($this->server->loop, 30);
   }
 
   public function __destruct() {
