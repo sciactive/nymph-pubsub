@@ -6,6 +6,14 @@ Nymph is an object data store that is easy to use in JavaScript and PHP.
 
 ## Installation
 
+### Automatic Setup
+
+The fastest way to start building a Nymph app is with the Nymph App Template.
+
+[Nymph App Template](https://github.com/hperrin/nymph-template)
+
+### Manual Installation
+
 You can install Nymph PubSub Server with Composer.
 
 ```sh
@@ -23,6 +31,10 @@ composer require sciactive/nymph-pubsub
 ```
 ```php
 // pubsub.php: Start with `php pubsub.php [-d]`
+
+if (php_sapi_name() != "cli") {
+  die("You can only run pubsub.php from the command line.");
+}
 
 // This is an example server that is configured with hostname
 // "pubsubnetwork1entry" as an entry point to network1, which contains two
@@ -94,12 +106,12 @@ return [
 ```
 ```php
 // somewhere in your Nymph rest endpoint.
-include('path/to/pubsub/config.php');
+$config = include('path/to/pubsub/config.php');
 \Nymph\PubSub\Server::configure($config);
 ```
 
 For a thorough step by step guide to setting up Nymph on your own server, visit the [Setup Guide](https://github.com/sciactive/nymph/wiki/Setup-Guide).
 
-## Documentation
+## API Docs
 
-Check out the documentation in the wiki, [Technical Documentation Index](https://github.com/sciactive/nymph/wiki/Technical-Documentation).
+Check out the [API Docs in the wiki](https://github.com/sciactive/nymph/wiki/API-Docs).
