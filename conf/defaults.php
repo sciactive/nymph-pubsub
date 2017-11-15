@@ -9,35 +9,39 @@
  * @link http://sciactive.com/
  */
 
-return (object) [
+return [
+  /*
+   * PubSub Entries
+   * The URLs of the Nymph-PubSub servers to directly publish to. These servers
+   * are how this host will enter the PubSub network. If you only have one
+   * PubSub server, it needs to be listed here.
+   */
   'entries' => [
-    'cname' => 'PubSub Entries',
-    'description' => 'The URLs of the Nymph-PubSub servers to directly publish to. These servers are how this host will enter the PubSub network. If you only have one PubSub server, it needs to be listed here.',
-    'value' => [
-      'ws://127.0.0.1:8080/',
-    ],
+    'ws://127.0.0.1:8080/',
   ],
+  /*
+   * PubSub Relays
+   * The URLs of additional Nymph-PubSub servers to relay publishes to. If this
+   * host is a PubSub server, these servers are how it will continue into your
+   * PubSub network.
+   */
   'relays' => [
-    'cname' => 'PubSub Relays',
-    'description' => 'The URLs of additional Nymph-PubSub servers to relay publishes to. If this host is a PubSub server, these servers are how it will continue into your PubSub network.',
-    'value' => [
-      //'ws://127.0.0.1:8080/',
-    ],
+    //'ws://127.0.0.1:8080/',
   ],
-  'host' => [
-    'cname' => 'Host',
-    'description' => 'The host address to bind to.',
-    'value' => '0.0.0.0',
-  ],
-  'port' => [
-    'cname' => 'Port',
-    'description' => 'The port to listen on.',
-    'value' => 8080,
-  ],
-  'broadcast_counts' => [
-    'cname' => 'Broadcast Counts',
-    'description' => 'Allow clients to request to be notified when other clients subscribe to the same queries.',
-    'value' => true,
-  ],
+  /*
+   * Host
+   * The host address to bind to.
+   */
+  'host' => '0.0.0.0',
+  /*
+   * Port
+   * The port to listen on.
+   */
+  'port' => 8080,
+  /*
+   * Broadcast Counts
+   * Allow clients to request to be notified when other clients subscribe to the
+   * same queries.
+   */
+  'broadcast_counts' => true,
 ];
-

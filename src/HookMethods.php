@@ -1,12 +1,12 @@
 <?php namespace Nymph\PubSub;
 
-use \SciActive\Hook;
-use \WebSocket\Client as TextalkWebSocketClient;
+use SciActive\Hook;
+use WebSocket\Client as TextalkWebSocketClient;
 
 class HookMethods {
   public static function setup() {
-    if (!\SciActive\RequirePHP::isdef('NymphPubSubConfig')) {
-      \Nymph\PubSub\Server::configure();
+    if (!isset(Server::$config)) {
+      Server::configure();
     }
 
     Hook::addCallback(
@@ -193,9 +193,7 @@ class HookMethods {
   }
 
   public static function sendMessage($message) {
-    $config = \SciActive\RequirePHP::_('NymphPubSubConfig');
-
-    foreach ($config['entries'] as $host) {
+    foreach (Server::$config['entries'] as $host) {
       $client = new TextalkWebSocketClient($host);
       $client->send($message);
     }

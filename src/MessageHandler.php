@@ -1,9 +1,8 @@
 <?php namespace Nymph\PubSub;
 
-use \Ratchet\MessageComponentInterface;
-use \Ratchet\ConnectionInterface;
-use \SciActive\RequirePHP;
-use \WebSocket\Client as TextalkWebSocketClient;
+use Ratchet\MessageComponentInterface;
+use Ratchet\ConnectionInterface;
+use WebSocket\Client as TextalkWebSocketClient;
 
 /**
  * Handle subscriptions and publications.
@@ -82,7 +81,7 @@ class MessageHandler implements MessageComponentInterface {
                 "Client subscribed to a query! " .
                     "($serialArgs, {$from->resourceId})"
             );
-            if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+            if (Server::$config['broadcast_counts']) {
               // Notify clients of the subscription count.
               $count = count($this->subscriptions['queries'][$serialArgs]) - 1;
               foreach ($this->subscriptions['queries'][$serialArgs] as
@@ -115,7 +114,7 @@ class MessageHandler implements MessageComponentInterface {
                     "Client unsubscribed from a query! ".
                         "($serialArgs, {$from->resourceId})"
                 );
-                if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+                if (Server::$config['broadcast_counts']) {
                   // Notify clients of the subscription count.
                   $count =
                       count($this->subscriptions['queries'][$serialArgs]) - 1;
@@ -153,7 +152,7 @@ class MessageHandler implements MessageComponentInterface {
                 "Client subscribed to a UID! " .
                     "({$data['uid']}, {$from->resourceId})"
             );
-            if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+            if (Server::$config['broadcast_counts']) {
               // Notify clients of the subscription count.
               $count = count($this->subscriptions['uids'][$data['uid']]);
               foreach ($this->subscriptions['uids'][$data['uid']] as
@@ -179,7 +178,7 @@ class MessageHandler implements MessageComponentInterface {
                     "Client unsubscribed from a UID! " .
                         "({$data['uid']}, {$from->resourceId})"
                 );
-                if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+                if (Server::$config['broadcast_counts']) {
                   // Notify clients of the subscription count.
                   $count = count($this->subscriptions['uids'][$data['uid']]);
                   foreach ($this->subscriptions['uids'][$data['uid']] as
@@ -352,7 +351,7 @@ class MessageHandler implements MessageComponentInterface {
         }
         if ($conn->resourceId === $curClient['client']->resourceId) {
           unset($curClients[$key]);
-          if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+          if (Server::$config['broadcast_counts']) {
             // Notify clients of the subscription count.
             $count = count($curClients) - 1;
             foreach ($curClients as $key => $curCountClient) {
@@ -383,7 +382,7 @@ class MessageHandler implements MessageComponentInterface {
       foreach ($curClients as $key => $curClient) {
         if ($conn->resourceId === $curClient['client']->resourceId) {
           unset($curClients[$key]);
-          if (RequirePHP::_('NymphPubSubConfig')['broadcast_counts']) {
+          if (Server::$config['broadcast_counts']) {
             // Notify clients of the subscription count.
             $count = count($curClients);
             foreach ($curClients as $curCountClient) {
@@ -421,13 +420,11 @@ class MessageHandler implements MessageComponentInterface {
    * @param string $message The publish data to relay.
    */
   private function relay($message) {
-    $config = \SciActive\RequirePHP::_('NymphPubSubConfig');
-
-    if (!$config['relays']) {
+    if (!Server::$config['relays']) {
       return;
     }
 
-    foreach ($config['relays'] as $host) {
+    foreach (Server::$config['relays'] as $host) {
       $client = new TextalkWebSocketClient($host);
       $client->send($message);
     }

@@ -1,14 +1,21 @@
 <?php namespace Nymph\PubSub;
 
-use \Ratchet\Server\IoServer;
-use \Ratchet\Http\HttpServer;
-use \Ratchet\WebSocket\WsServer;
-use \SciActive\RequirePHP;
+use Ratchet\Server\IoServer;
+use Ratchet\Http\HttpServer;
+use Ratchet\WebSocket\WsServer;
 
 class Server {
   private $logger;
   private $writer;
   private $server;
+
+  /**
+   * The PubSub config array.
+   *
+   * @var array
+   * @access public
+   */
+  public static $config;
 
   /**
    * Apply configuration to Nymph-PubSub.
@@ -17,36 +24,21 @@ class Server {
    * the following form:
    *
    * [
-   *     'driver' => 'MySQL',
-   *     'pubsub' => true,
-   *     'MySql' => [
-   *         'host' => '127.0.0.1'
-   *     ]
+   *   'entries' => [
+   *     'ws://127.0.0.1:8081/',
+   *   ],
+   *   'port' => 8081
    * ]
    *
    * @param array $config An associative array of Nymph's configuration.
    */
   public static function configure($config = []) {
-    RequirePHP::_('NymphPubSubConfig', [], function () use ($config) {
-      $defaults = include dirname(__DIR__).'/conf/defaults.php';
-      $nymphConfig = [];
-      foreach ($defaults as $curName => $curOption) {
-        if ((array) $curOption === $curOption && isset($curOption['value'])) {
-          $nymphConfig[$curName] = $curOption['value'];
-        } else {
-          $nymphConfig[$curName] = [];
-          foreach ($curOption as $curSubName => $curSubOption) {
-            $nymphConfig[$curName][$curSubName] = $curSubOption['value'];
-          }
-        }
-      }
-      return array_replace_recursive($nymphConfig, $config);
-    });
+    $defaults = include dirname(__DIR__).'/conf/defaults.php';
+    self::$config = array_replace($defaults, $config);
   }
 
   public function __construct($config = []) {
     self::configure($config);
-    $config = RequirePHP::_('NymphPubSubConfig');
 
     // Create a logger which writes everything to the STDOUT
     $this->logger = new \Zend\Log\Logger();
@@ -56,7 +48,7 @@ class Server {
     // Create a WebSocket server using SSL
     try {
       $this->logger->notice(
-          "Nymph-PubSub server starting on {$config['host']}:{$config['port']}."
+          "Nymph-PubSub server starting on ".self::$config['host'].":".self::$config['port']."."
       );
     } catch (\Exception $e) {
       if (strpos($e->getMessage(), 'date.timezone')) {
@@ -75,8 +67,8 @@ class Server {
         new HttpServer(
             $wsServer
         ),
-        $config['port'],
-        $config['host']
+        self::$config['port'],
+        self::$config['host']
     );
 
     $wsServer->enableKeepAlive($this->server->loop, 30);
