@@ -50,7 +50,7 @@ class MessageHandler implements MessageComponentInterface {
           $count = count($args);
           if ($count > 1) {
             for ($i = 1; $i < $count; $i++) {
-              $newArg = \Nymph\REST::translateSelector($args[$i]);
+              $newArg = \Nymph\REST::translateSelector($args[0]['class'], $args[$i]);
               if ($newArg === false) {
                 return;
               }
