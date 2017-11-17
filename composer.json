@@ -1,8 +1,8 @@
 {
   "name": "sciactive/nymph-pubsub",
   "description": "A library for publishing/subscribing to Nymph database changes.",
-  "version": "2.2.1",
-  "time": "2017-10-31",
+  "version": "3.0.0-beta.1",
+  "time": "2017-11-16",
   "homepage": "http://nymph.io/",
   "type": "library",
   "authors": [
@@ -41,12 +41,13 @@
     }
   },
   "require": {
-    "sciactive/nymph-server": "~2.2.0",
-    "sciactive/hookphp": "~2.0.2",
+    "sciactive/nymph-server": "^3.0@beta",
+    "sciactive/hookphp": "^2.0",
     "cboden/ratchet": "0.4.*",
     "zendframework/zend-log": "2.*",
     "textalk/websocket": "1.2.*"
   },
+  "minimum-stability": "beta",
   "maybe-require-idk": {
     "php-amqplib/php-amqplib": "2.6.*"
   }
