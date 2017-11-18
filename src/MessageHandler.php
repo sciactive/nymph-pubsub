@@ -50,6 +50,9 @@ class MessageHandler implements MessageComponentInterface {
           $count = count($args);
           if ($count > 1) {
             for ($i = 1; $i < $count; $i++) {
+              if (!class_exists($args[0]['class'])) {
+                return;
+              }
               $newArg = \Nymph\REST::translateSelector($args[0]['class'], $args[$i]);
               if ($newArg === false) {
                 return;
@@ -64,6 +67,7 @@ class MessageHandler implements MessageComponentInterface {
             if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
               $guidArgs = $args;
               $guidArgs[0]['return'] = 'guid';
+              $guidArgs[0]['skip_ac'] = true;
               $this->subscriptions['queries'][$serialArgs] = [
                 'current' => call_user_func_array(
                     "\Nymph\Nymph::getEntities",
@@ -225,6 +229,7 @@ class MessageHandler implements MessageComponentInterface {
                 $guidArgs = unserialize($curQuery);
                 $this->prepareSelectors($guidArgs);
                 $guidArgs[0]['return'] = 'guid';
+                $guidArgs[0]['skip_ac'] = true;
                 $curClients['current'] =
                     call_user_func_array(
                         "\Nymph\Nymph::getEntities",
@@ -270,6 +275,7 @@ class MessageHandler implements MessageComponentInterface {
                 $guidArgs = unserialize($curQuery);
                 $this->prepareSelectors($guidArgs);
                 $guidArgs[0]['return'] = 'guid';
+                $guidArgs[0]['skip_ac'] = true;
                 $curClients['current'] =
                     call_user_func_array(
                         "\Nymph\Nymph::getEntities",
