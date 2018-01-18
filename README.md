@@ -1,6 +1,6 @@
 # Nymph PubSub Server - collaborative app data
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/sciactive/nymph-pubsub.svg?style=flat)](https://packagist.org/packages/sciactive/nymph-pubsub) [![License](https://img.shields.io/packagist/l/sciactive/nymph-pubsub.svg?style=flat)](https://packagist.org/packages/sciactive/nymph-pubsub) [![Open Issues](https://img.shields.io/github/issues/sciactive/nymph-pubsub.svg?style=flat)](https://github.com/sciactive/nymph-pubsub/issues)
+[![Latest Stable Version](https://img.shields.io/packagist/v/sciactive/nymph-pubsub.svg)](https://packagist.org/packages/sciactive/nymph-pubsub) [![Open Issues](https://img.shields.io/github/issues/sciactive/nymph-pubsub.svg)](https://github.com/sciactive/nymph-pubsub/issues) [![License](https://img.shields.io/github/license/sciactive/nymph-pubsub.svg)]()
 
 Nymph is an object data store that is easy to use in JavaScript and PHP.
 
