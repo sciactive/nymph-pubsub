@@ -48,7 +48,8 @@ class Server {
     // Create a WebSocket server using SSL
     try {
       $this->logger->notice(
-          "Nymph-PubSub server starting on ".self::$config['host'].":".self::$config['port']."."
+          "Nymph-PubSub server starting on ".
+            self::$config['host'].":".self::$config['port']."."
       );
     } catch (\Exception $e) {
       if (strpos($e->getMessage(), 'date.timezone')) {

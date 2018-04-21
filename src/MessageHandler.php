@@ -53,7 +53,8 @@ class MessageHandler implements MessageComponentInterface {
               if (!class_exists($args[0]['class'])) {
                 return;
               }
-              $newArg = \Nymph\REST::translateSelector($args[0]['class'], $args[$i]);
+              $newArg =
+                \Nymph\REST::translateSelector($args[0]['class'], $args[$i]);
               if ($newArg === false) {
                 return;
               }
