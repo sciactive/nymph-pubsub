@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "47bdabb8c225c247a16ebce6542e8489",
+    "content-hash": "611fb0366975e9e5b3c8cc797df78b23",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -763,21 +763,22 @@
         },
         {
             "name": "sciactive/nymph-server",
-            "version": "3.0.0-beta.7",
+            "version": "3.0.0-beta.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sciactive/nymph-server.git",
-                "reference": "740c65e2e1dbea7ceee0165c37f5ca73f1cb6cbb"
+                "reference": "b0c341744aa44d3e2fc3039eabcf25cc5ab4035b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/740c65e2e1dbea7ceee0165c37f5ca73f1cb6cbb",
-                "reference": "740c65e2e1dbea7ceee0165c37f5ca73f1cb6cbb",
+                "url": "https://api.github.com/repos/sciactive/nymph-server/zipball/b0c341744aa44d3e2fc3039eabcf25cc5ab4035b",
+                "reference": "b0c341744aa44d3e2fc3039eabcf25cc5ab4035b",
                 "shasum": ""
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.1",
-                "sciactive/hookphp": "~2.0.2"
+                "phpunit/phpunit": "^7.1",
+                "sciactive/hookphp": "~2.0.2",
+                "squizlabs/php_codesniffer": "3.*"
             },
             "type": "library",
             "autoload": {
@@ -812,7 +813,7 @@
                 "postgres",
                 "postgresql"
             ],
-            "time": "2018-01-11T00:00:00+00:00"
+            "time": "2018-04-23T00:00:00+00:00"
         },
         {
             "name": "symfony/http-foundation",
