@@ -9,13 +9,13 @@ use WebSocket\Client as TextalkWebSocketClient;
  */
 class MessageHandler implements MessageComponentInterface {
   private $logger;
-  protected $subscriptions = [
-    'queries' => [],
-    'uids' => []
-  ];
+  private $sessions;
+  protected $querySubs = [];
+  protected $uidSubs = [];
 
   public function __construct(\Zend\Log\Logger $logger) {
     $this->logger = $logger;
+    $this->sessions = new \SplObjectStorage();
   }
 
   /**
@@ -38,14 +38,25 @@ class MessageHandler implements MessageComponentInterface {
     if (!$data['action']
         || !in_array(
             $data['action'],
-            ['subscribe', 'unsubscribe', 'publish']
+            ['authenticate', 'subscribe', 'unsubscribe', 'publish']
         )) {
       return;
     }
     switch ($data['action']) {
+      case 'authenticate':
+        // Save the user's auth token in session storage.
+        $token = $data['token'];
+        if (isset($token)) {
+          $this->sessions->attach($from, $token);
+        } else {
+          $this->sessions->detach($from);
+        }
+        break;
       case 'subscribe':
       case 'unsubscribe':
         if (isset($data['query'])) {
+          // Request is for a query.
+
           $args = json_decode($data['query'], true);
           $count = count($args);
           if ($count > 1) {
@@ -63,145 +74,150 @@ class MessageHandler implements MessageComponentInterface {
           }
           $serialArgs = serialize($args);
           $this->prepareSelectors($args);
-          $args[0]['skip_ac'] = true;
+
           if ($data['action'] === 'subscribe') {
-            if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
-              $guidArgs = $args;
-              $guidArgs[0]['return'] = 'guid';
-              $guidArgs[0]['skip_ac'] = true;
-              $this->subscriptions['queries'][$serialArgs] = [
-                'current' => call_user_func_array(
-                    "\Nymph\Nymph::getEntities",
-                    $guidArgs
-                )
-              ];
+            // Client is subscribing to a query.
+            if (!key_exists($serialArgs, $this->querySubs)) {
+              $this->querySubs[$serialArgs] = new \SplObjectStorage();
             }
-            $this->subscriptions['queries'][$serialArgs][] =
-                [
-                  'client' => $from,
-                  'query' => $data['query'],
-                  'count' => !!$data['count']
-                ];
+            $guidArgs = $args;
+            $guidArgs[0]['return'] = 'guid';
+            $guidArgs[0]['source'] = 'pubsub';
+            if ($this->sessions->contains($from)) {
+              $guidArgs[0]['token'] = $this->sessions[$from];
+            } else {
+              $guidArgs[0]['token'] = null;
+            }
+            $this->querySubs[$serialArgs]->attach($from, [
+              'current' => call_user_func_array(
+                  "\Nymph\Nymph::getEntities",
+                  $guidArgs
+              ),
+              'query' => $data['query'],
+              'count' => !!$data['count']
+            ]);
             $this->logger->notice(
                 "Client subscribed to a query! " .
-                    "($serialArgs, {$from->resourceId})"
+                  "($serialArgs, {$from->resourceId})"
             );
+
             if (Server::$config['broadcast_counts']) {
               // Notify clients of the subscription count.
-              $count = count($this->subscriptions['queries'][$serialArgs]) - 1;
-              foreach ($this->subscriptions['queries'][$serialArgs] as
-                  $key => $curClient) {
-                if ($key === 'current') {
-                  continue;
-                }
-                if ($curClient['count']) {
-                  $curClient['client']->send(
-                      json_encode(
-                          ['query' => $curClient['query'], 'count' => $count]
-                      )
-                  );
-                }
-              }
-            }
-          } elseif ($data['action'] === 'unsubscribe') {
-            if (!key_exists($serialArgs, $this->subscriptions['queries'])) {
-              return;
-            }
-            foreach ($this->subscriptions['queries'][$serialArgs] as
-                $key => $value) {
-              if ($key === 'current') {
-                continue;
-              }
-              if ($from->resourceId === $value['client']->resourceId
-                  && $data['query'] === $value['query']) {
-                unset($this->subscriptions['queries'][$serialArgs][$key]);
-                $this->logger->notice(
-                    "Client unsubscribed from a query! ".
-                        "($serialArgs, {$from->resourceId})"
-                );
-                if (Server::$config['broadcast_counts']) {
-                  // Notify clients of the subscription count.
-                  $count =
-                      count($this->subscriptions['queries'][$serialArgs]) - 1;
-                  foreach ($this->subscriptions['queries'][$serialArgs] as
-                      $key => $curClient) {
-                    if ($key === 'current') {
-                      continue;
-                    }
-                    if ($curClient['count']) {
-                      $curClient['client']->send(
-                          json_encode(
-                              [
-                                'query' => $curClient['query'],
-                                'count' => $count
-                              ]
-                          )
-                      );
-                    }
-                  }
-                }
-                if (count($this->subscriptions['queries'][$serialArgs]) === 1) {
-                  unset($this->subscriptions['queries'][$serialArgs]);
+              $count = count($this->querySubs[$serialArgs]);
+              foreach ($this->querySubs[$serialArgs] as $key) {
+                $curData = $this->querySubs[$serialArgs][$key];
+                if ($curData['count']) {
+                  $key->send(json_encode([
+                    'query' => $curData['query'],
+                    'count' => $count
+                  ]));
                 }
               }
             }
           }
-        } elseif (isset($data['uid']) && is_string($data['uid'])) {
-          if ($data['action'] === 'subscribe') {
-            if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
-              $this->subscriptions['uids'][$data['uid']] = [];
-            }
-            $this->subscriptions['uids'][$data['uid']][] =
-                ['client' => $from, 'count' => !!$data['count']];
-            $this->logger->notice(
-                "Client subscribed to a UID! " .
-                    "({$data['uid']}, {$from->resourceId})"
-            );
-            if (Server::$config['broadcast_counts']) {
-              // Notify clients of the subscription count.
-              $count = count($this->subscriptions['uids'][$data['uid']]);
-              foreach ($this->subscriptions['uids'][$data['uid']] as
-                  $curClient) {
-                if ($curClient['count']) {
-                  $curClient['client']->send(
-                      json_encode(
-                          ['uid' => $data['uid'], 'count' => $count]
-                      )
-                  );
-                }
-              }
-            }
-          } elseif ($data['action'] === 'unsubscribe') {
-            if (!key_exists($data['uid'], $this->subscriptions['uids'])) {
+
+          if ($data['action'] === 'unsubscribe') {
+            // Client is unsubscribing from a query.
+            if (!key_exists($serialArgs, $this->querySubs)) {
               return;
             }
-            foreach ($this->subscriptions['uids'][$data['uid']] as
-                $key => $value) {
-              if ($from->resourceId === $value['client']->resourceId) {
-                unset($this->subscriptions['uids'][$data['uid']][$key]);
-                $this->logger->notice(
-                    "Client unsubscribed from a UID! " .
-                        "({$data['uid']}, {$from->resourceId})"
-                );
-                if (Server::$config['broadcast_counts']) {
-                  // Notify clients of the subscription count.
-                  $count = count($this->subscriptions['uids'][$data['uid']]);
-                  foreach ($this->subscriptions['uids'][$data['uid']] as
-                      $curClient) {
-                    if ($curClient['count']) {
-                      $curClient['client']->send(
-                          json_encode(
-                              ['uid' => $data['uid'], 'count' => $count]
-                          )
-                      );
-                    }
-                  }
+            if (!$this->querySubs[$serialArgs]->contains($from)) {
+              return;
+            }
+            $this->querySubs[$serialArgs]->detach($from);
+            $this->logger->notice(
+                "Client unsubscribed from a query! " .
+                  "($serialArgs, {$from->resourceId})"
+            );
+
+            $count = count($this->querySubs[$serialArgs]);
+
+            if ($count === 0) {
+              // No more subscribed clients.
+              unset($this->querySubs[$serialArgs]);
+              return;
+            }
+
+            if (Server::$config['broadcast_counts']) {
+              // Notify clients of the subscription count.
+              foreach ($this->querySubs[$serialArgs] as $key) {
+                $curData = $this->querySubs[$serialArgs][$key];
+                if ($curData['count']) {
+                  $key->send(json_encode([
+                    'query' => $curData['query'],
+                    'count' => $count
+                  ]));
                 }
-                break;
               }
             }
-            if (count($this->subscriptions['uids'][$data['uid']]) === 0) {
-              unset($this->subscriptions['uids'][$data['uid']]);
+          }
+        }
+
+        if (isset($data['uid']) && is_string($data['uid'])) {
+          // Request is for a UID.
+
+          if ($data['action'] === 'subscribe') {
+            // Client is subscribing to a UID.
+            if (!key_exists($data['uid'], $this->uidSubs)) {
+              $this->uidSubs[$data['uid']] = new \SplObjectStorage();
+            }
+            $this->uidSubs[$data['uid']]->attach($from, [
+              'count' => !!$data['count']
+            ]);
+            $this->logger->notice(
+                "Client subscribed to a UID! " .
+                  "({$data['uid']}, {$from->resourceId})"
+            );
+
+            if (Server::$config['broadcast_counts']) {
+              // Notify clients of the subscription count.
+              $count = count($this->uidSubs[$data['uid']]);
+              foreach ($this->uidSubs[$data['uid']] as $key) {
+                $curData = $this->uidSubs[$data['uid']][$key];
+                if ($curData['count']) {
+                  $key->send(json_encode([
+                    'uid' => $data['uid'],
+                    'count' => $count
+                  ]));
+                }
+              }
+            }
+          }
+
+          if ($data['action'] === 'unsubscribe') {
+            // Client is unsubscribing from a UID.
+            if (!key_exists($data['uid'], $this->uidSubs)) {
+              return;
+            }
+            if (!$this->uidSubs[$data['uid']]->contains($from)) {
+              return;
+            }
+            $this->uidSubs[$data['uid']]->detach($from);
+            $this->logger->notice(
+                "Client unsubscribed from a UID! " .
+                  "({$data['uid']}, {$from->resourceId})"
+            );
+
+            $count = count($this->uidSubs[$data['uid']]);
+
+            if ($count === 0) {
+              // No more subscribed clients.
+              unset($this->uidSubs[$data['uid']]);
+              return;
+            }
+
+            if (Server::$config['broadcast_counts']) {
+              // Notify clients of the subscription count.
+              $count = count($this->uidSubs[$data['uid']]);
+              foreach ($this->uidSubs[$data['uid']] as $key) {
+                $curData = $this->uidSubs[$data['uid']][$key];
+                if ($curData['count']) {
+                  $key->send(json_encode([
+                    'uid' => $data['uid'],
+                    'count' => $count
+                  ]));
+                }
+              }
             }
           }
         }
@@ -214,47 +230,75 @@ class MessageHandler implements MessageComponentInterface {
                 isset($data['entity'])
                 && ($data['event'] === 'create' || $data['event'] === 'update')
               )
-            )) {
+            )
+          ) {
+          // Publish is an entity.
           $this->logger->notice(
               "Received an entity publish! " .
-                  "({$data['guid']}, {$data['event']}, {$from->resourceId})"
+                "({$data['guid']}, {$data['event']}, {$from->resourceId})"
           );
           // Relay the publish to other servers.
           $this->relay($msg);
-          foreach ($this->subscriptions['queries'] as
-              $curQuery => &$curClients) {
+
+          foreach ($this->querySubs as $curQuery => $curClients) {
+            $updatedClients = new \SplObjectStorage();
+
             if ($data['event'] === 'delete' || $data['event'] === 'update') {
-              // Check if it is in any queries' currents.
-              if (in_array($data['guid'], $curClients['current'])) {
-                // Update currents list.
-                $guidArgs = unserialize($curQuery);
-                $this->prepareSelectors($guidArgs);
-                $guidArgs[0]['return'] = 'guid';
-                $guidArgs[0]['skip_ac'] = true;
-                $curClients['current'] =
-                    call_user_func_array(
-                        "\Nymph\Nymph::getEntities",
-                        $guidArgs
-                    );
-                // Notify subscribers.
-                foreach ($curClients as $key => $curClient) {
-                  if ($key === 'current') {
-                    continue;
+              // Check if it is in any client's currents.
+              foreach ($curClients as $curClient) {
+                $curData = $curClients[$curClient];
+                if (in_array($data['guid'], $curData['current'])) {
+                  // Update currents list.
+                  $queryArgs = unserialize($curQuery);
+                  $this->prepareSelectors($queryArgs);
+                  $queryArgs[0]['return'] = 'guid';
+                  $queryArgs[0]['source'] = 'pubsub';
+                  if ($this->sessions->contains($curClient)) {
+                    $queryArgs[0]['token'] = $this->sessions[$curClient];
+                  } else {
+                    $queryArgs[0]['token'] = null;
                   }
-                  $this->logger->notice(
-                      "Notifying client of modification! " .
-                          "({$curClient['client']->resourceId})"
+                  $queryArgs[] = ['&', 'guid' => $data['guid']];
+                  $current = call_user_func_array(
+                      "\Nymph\Nymph::getEntity",
+                      $queryArgs
                   );
-                  $curClient['client']->send(
-                      json_encode(['query' => $curClient['query']])
-                  );
+
+                  if (isset($current)) {
+                    // Notify subscriber.
+                    $this->logger->notice(
+                        "Notifying client of update! " .
+                          "({$curClient->resourceId})"
+                    );
+                    $curClient->send(json_encode([
+                      'query' => $curData['query'],
+                      'updated' => $data['guid']
+                    ]));
+                  } else {
+                    $curData['current'] = array_diff(
+                        $curData['current'],
+                        [$data['guid']]
+                    );
+                    $curClients->attach($curClient, $curData);
+
+                    // Notify subscriber.
+                    $this->logger->notice(
+                        "Notifying client of removal! " .
+                          "({$curClient->resourceId})"
+                    );
+                    $curClient->send(json_encode([
+                      'query' => $curData['query'],
+                      'removed' => $data['guid']
+                    ]));
+                  }
+
+                  $updatedClients->attach($curClient);
                 }
-                continue;
               }
             }
-            // It isn't in the current matching entities.
+
             if ($data['event'] === 'create' || $data['event'] === 'update') {
-              // Check if it matches any queries.
+              // Check if it matches the query.
               $selectors = unserialize($curQuery);
               $this->prepareSelectors($selectors);
               $options = $selectors[0];
@@ -271,70 +315,88 @@ class MessageHandler implements MessageComponentInterface {
                       $selectors,
                       $data['guid'],
                       $data['entity']['tags']
-                  )) {
-                // Update currents list.
-                $guidArgs = unserialize($curQuery);
-                $this->prepareSelectors($guidArgs);
-                $guidArgs[0]['return'] = 'guid';
-                $guidArgs[0]['skip_ac'] = true;
-                $curClients['current'] =
-                    call_user_func_array(
-                        "\Nymph\Nymph::getEntities",
-                        $guidArgs
-                    );
-                // If we're here, it means the query didn't
-                // match the entity before, and now it does. We
-                // could check currents to see if it's been
-                // removed by limits, but that may give us bad
-                // data, since the client queries are filtered
-                // by Tilmeld.
-                // Notify subscribers.
-                foreach ($curClients as $key => $curClient) {
-                  if ($key === 'current') {
+                  )
+                ) {
+                // It does match the query.
+                foreach ($curClients as $curClient) {
+                  if ($updatedClients->contains($curClient)) {
                     continue;
                   }
+
+                  // Check that the user can access the entity.
+                  $queryArgs = unserialize($curQuery);
+                  $this->prepareSelectors($queryArgs);
+                  $queryArgs[0]['return'] = 'guid';
+                  $queryArgs[0]['source'] = 'pubsub';
+                  if ($this->sessions->contains($curClient)) {
+                    $queryArgs[0]['token'] = $this->sessions[$curClient];
+                  } else {
+                    $queryArgs[0]['token'] = null;
+                  }
+                  $queryArgs[] = ['&', 'guid' => $data['guid']];
+                  $current = call_user_func_array(
+                      "\Nymph\Nymph::getEntity",
+                      $queryArgs
+                  );
+                  if (!isset($current)) {
+                    continue;
+                  }
+
+                  // Update the currents list.
+                  $curData = $curClients[$curClient];
+                  $curData['current'][] = $data['guid'];
+                  $curClients->attach($curClient, $curData);
+
+                  // Notify client.
                   $this->logger->notice(
                       "Notifying client of new match! " .
-                          "({$curClient['client']->resourceId})"
+                        "({$curClient->resourceId})"
                   );
-                  $curClient['client']->send(
-                      json_encode(['query' => $curClient['query']])
-                  );
+                  $curClient->send(json_encode([
+                    'query' => $curData['query'],
+                    'added' => $data['guid']
+                  ]));
                 }
               }
             }
           }
-          unset($curClients);
-        } elseif ((
+        }
+
+        if ((
               isset($data['name'])
               || (isset($data['oldName']) && isset($data['newName']))
             )
             && in_array(
                 $data['event'],
                 ['newUID', 'setUID', 'renameUID', 'deleteUID']
-            )) {
+            )
+          ) {
+          // Publish is a UID.
           $this->logger->notice(
               "Received a UID publish! (" .
-                  (
-                    isset($data['name'])
-                        ? $data['name']
-                        : "{$data['oldName']} => {$data['newName']}"
-                  ) .
-                  ", {$data['event']}, {$from->resourceId})"
+                (
+                  isset($data['name'])
+                      ? $data['name']
+                      : "{$data['oldName']} => {$data['newName']}"
+                ) .
+                ", {$data['event']}, {$from->resourceId})"
           );
           // Relay the publish to other servers.
           $this->relay($msg);
+
           foreach ($data as $key => $name) {
             if (!in_array($key, ['name', 'newName', 'oldName'])
-                || !key_exists($name, $this->subscriptions['uids'])) {
+                || !key_exists($name, $this->uidSubs)) {
               continue;
             }
-            foreach ($this->subscriptions['uids'][$name] as $curClient) {
+            foreach ($this->uidSubs[$name] as $curClient) {
               $this->logger->notice(
                   "Notifying client of {$data['event']}! " .
-                      "($name, {$curClient['client']->resourceId})"
+                    "($name, {$curClient->resourceId})"
               );
-              $curClient['client']->send(json_encode(['uid' => $name]));
+              $curClient->send(json_encode([
+                'uid' => $name
+              ]));
             }
           }
         }
@@ -351,68 +413,63 @@ class MessageHandler implements MessageComponentInterface {
     $this->logger->notice("Client skedaddled. ({$conn->resourceId})");
 
     $mess = 0;
-    foreach ($this->subscriptions['queries'] as $curQuery => &$curClients) {
-      foreach ($curClients as $key => $curClient) {
-        if ($key === 'current') {
-          continue;
-        }
-        if ($conn->resourceId === $curClient['client']->resourceId) {
-          unset($curClients[$key]);
+    foreach ($this->querySubs as $curQuery => $curClients) {
+      if ($curClients->contains($conn)) {
+        $curClients->detach($conn);
+
+        $count = count($curClients);
+
+        if ($count === 0) {
+          unset($this->querySubs[$curQuery]);
+        } else {
           if (Server::$config['broadcast_counts']) {
             // Notify clients of the subscription count.
-            $count = count($curClients) - 1;
-            foreach ($curClients as $key => $curCountClient) {
-              if ($key === 'current') {
-                continue;
-              }
-              if ($curCountClient['count']) {
-                $curCountClient['client']->send(
-                    json_encode(
-                        [
-                          'query' => $curCountClient['query'],
-                          'count' => $count
-                        ]
-                    )
-                );
+            foreach ($curClients as $key) {
+              $curData = $curClients[$key];
+              if ($curData['count']) {
+                $key->send(json_encode([
+                  'query' => $curData['query'],
+                  'count' => $count
+                ]));
               }
             }
           }
-          if (count($curClients) === 1) {
-            unset($this->subscriptions['queries'][$curQuery]);
-          }
-          $mess++;
         }
+        $mess++;
       }
     }
-    unset($curClients);
-    foreach ($this->subscriptions['uids'] as $curUID => &$curClients) {
-      foreach ($curClients as $key => $curClient) {
-        if ($conn->resourceId === $curClient['client']->resourceId) {
-          unset($curClients[$key]);
+
+    foreach ($this->uidSubs as $curUID => $curClients) {
+      if ($curClients->contains($conn)) {
+        $curClients->detach($conn);
+
+        $count = count($curClients);
+
+        if ($count === 0) {
+          unset($this->uidSubs[$curUID]);
+        } else {
           if (Server::$config['broadcast_counts']) {
             // Notify clients of the subscription count.
             $count = count($curClients);
-            foreach ($curClients as $curCountClient) {
-              if ($curCountClient['count']) {
-                $curCountClient['client']->send(
-                    json_encode(['uid' => $curUID, 'count' => $count])
-                );
+            foreach ($curClients as $key) {
+              $curData = $curClients[$key];
+              if ($curData['count']) {
+                $key->send(json_encode([
+                  'uid' => $curUID,
+                  'count' => $count
+                ]));
               }
             }
           }
-          if (count($curClients) === 0) {
-            unset($this->subscriptions['uids'][$curUID]);
-          }
-          $mess++;
         }
+        $mess++;
       }
     }
-    unset($curClients);
 
     if ($mess) {
       $this->logger->notice(
           "Cleaned up client's mess. " .
-              "($mess, {$conn->resourceId})"
+            "($mess, {$conn->resourceId})"
       );
     }
   }
