@@ -24,18 +24,14 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => $data['guid'] === $data['entity']->guid
-                        ? 'update'
-                        : 'create',
-                    'guid' => $data['entity']->guid,
-                    'entity' => $data['entity']->jsonSerialize(false)
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => $data['guid'] === $data['entity']->guid
+                ? 'update'
+                : 'create',
+            'guid' => $data['entity']->guid,
+            'entity' => $data['entity']->jsonSerialize(false)
+          ]));
         }
     );
     Hook::addCallback(
@@ -52,15 +48,11 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'delete',
-                    'guid' => $data['guid']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'delete',
+            'guid' => $data['guid']
+          ]));
         }
     );
     Hook::addCallback(
@@ -77,15 +69,11 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'delete',
-                    'guid' => $data['guid']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'delete',
+            'guid' => $data['guid']
+          ]));
         }
     );
     Hook::addCallback(
@@ -102,15 +90,12 @@ class HookMethods {
           if (!isset($return[0])) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'newUID',
-                    'name' => $data['name']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'newUID',
+            'name' => $data['name'],
+            'value' => $return[0]
+          ]));
         }
     );
     Hook::addCallback(
@@ -118,6 +103,7 @@ class HookMethods {
         -10,
         function (&$arguments, $name, &$object, &$function, &$data) {
           $data['name'] = $arguments[0];
+          $data['value'] = (int) $arguments[1];
         }
     );
     Hook::addCallback(
@@ -127,15 +113,12 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'setUID',
-                    'name' => $data['name']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'setUID',
+            'name' => $data['name'],
+            'value' => $data['value']
+          ]));
         }
     );
     Hook::addCallback(
@@ -153,16 +136,12 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'renameUID',
-                    'oldName' => $data['oldName'],
-                    'newName' => $data['newName']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'renameUID',
+            'oldName' => $data['oldName'],
+            'newName' => $data['newName']
+          ]));
         }
     );
     Hook::addCallback(
@@ -179,15 +158,11 @@ class HookMethods {
           if (!$return[0]) {
             return;
           }
-          HookMethods::sendMessage(
-              json_encode(
-                  [
-                    'action' => 'publish',
-                    'event' => 'deleteUID',
-                    'name' => $data['name']
-                  ]
-              )
-          );
+          HookMethods::sendMessage(json_encode([
+            'action' => 'publish',
+            'event' => 'deleteUID',
+            'name' => $data['name']
+          ]));
         }
     );
   }
