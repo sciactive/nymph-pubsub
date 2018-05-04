@@ -406,13 +406,13 @@ class MessageHandler implements MessageComponentInterface {
             // Update currents list.
             $queryArgs = unserialize($curQuery);
             $this->prepareSelectors($queryArgs);
-            $queryArgs[0]['return'] = 'guid';
             $queryArgs[0]['source'] = 'pubsub';
             if ($this->sessions->contains($curClient)) {
-              $queryArgs[0]['token'] = $this->sessions[$curClient];
+              $token = $this->sessions[$curClient];
             } else {
-              $queryArgs[0]['token'] = null;
+              $token = null;
             }
+            $queryArgs[0]['token'] = $token;
             $queryArgs[] = ['&', 'guid' => $data['guid']];
             $current = call_user_func_array(
                 "\Nymph\Nymph::getEntity",
@@ -425,9 +425,19 @@ class MessageHandler implements MessageComponentInterface {
                   "Notifying client of update! " .
                     "({$curClient->resourceId})"
               );
+              if (is_callable([$current, 'updateDataProtection'])
+                  && class_exists('\Tilmeld\Tilmeld')
+                  && isset($token)
+                ) {
+                $user = \Tilmeld\Tilmeld::extractToken($token);
+                if ($user) {
+                  $current->updateDataProtection($user);
+                }
+              }
               $curClient->send(json_encode([
                 'query' => $curData['query'],
-                'updated' => $data['guid']
+                'updated' => $data['guid'],
+                'data' => $current
               ]));
             } else {
               $curData['current'] = array_diff(
@@ -481,13 +491,13 @@ class MessageHandler implements MessageComponentInterface {
             // Check that the user can access the entity.
             $queryArgs = unserialize($curQuery);
             $this->prepareSelectors($queryArgs);
-            $queryArgs[0]['return'] = 'guid';
             $queryArgs[0]['source'] = 'pubsub';
             if ($this->sessions->contains($curClient)) {
-              $queryArgs[0]['token'] = $this->sessions[$curClient];
+              $token = $this->sessions[$curClient];
             } else {
-              $queryArgs[0]['token'] = null;
+              $token = null;
             }
+            $queryArgs[0]['token'] = $token;
             $queryArgs[] = ['&', 'guid' => $data['guid']];
             $current = call_user_func_array(
                 "\Nymph\Nymph::getEntity",
@@ -507,9 +517,19 @@ class MessageHandler implements MessageComponentInterface {
                 "Notifying client of new match! " .
                   "({$curClient->resourceId})"
             );
+            if (is_callable([$current, 'updateDataProtection'])
+                && class_exists('\Tilmeld\Tilmeld')
+                && isset($token)
+              ) {
+              $user = \Tilmeld\Tilmeld::extractToken($token);
+              if ($user) {
+                $current->updateDataProtection($user);
+              }
+            }
             $curClient->send(json_encode([
               'query' => $curData['query'],
-              'added' => $data['guid']
+              'added' => $data['guid'],
+              'data' => $current
             ]));
           }
         }
