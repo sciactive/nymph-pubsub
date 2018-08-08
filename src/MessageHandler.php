@@ -120,7 +120,7 @@ class MessageHandler implements MessageComponentInterface {
 
     if ($mess) {
       $this->logger->notice(
-          "Cleaned up client's mess. " .
+          "Cleaned up client's mess. ".
             "($mess, {$conn->resourceId})"
       );
     }
@@ -211,7 +211,7 @@ class MessageHandler implements MessageComponentInterface {
         'count' => !!$data['count']
       ]);
       $this->logger->notice(
-          "Client subscribed to a query! " .
+          "Client subscribed to a query! ".
             "($serialArgs, {$from->resourceId})"
       );
 
@@ -240,7 +240,7 @@ class MessageHandler implements MessageComponentInterface {
       }
       $this->querySubs[$serialArgs]->detach($from);
       $this->logger->notice(
-          "Client unsubscribed from a query! " .
+          "Client unsubscribed from a query! ".
             "($serialArgs, {$from->resourceId})"
       );
 
@@ -283,7 +283,7 @@ class MessageHandler implements MessageComponentInterface {
         'count' => !!$data['count']
       ]);
       $this->logger->notice(
-          "Client subscribed to a UID! " .
+          "Client subscribed to a UID! ".
             "({$data['uid']}, {$from->resourceId})"
       );
 
@@ -312,7 +312,7 @@ class MessageHandler implements MessageComponentInterface {
       }
       $this->uidSubs[$data['uid']]->detach($from);
       $this->logger->notice(
-          "Client unsubscribed from a UID! " .
+          "Client unsubscribed from a UID! ".
             "({$data['uid']}, {$from->resourceId})"
       );
 
@@ -391,7 +391,7 @@ class MessageHandler implements MessageComponentInterface {
    */
   private function handlePublishEntity(ConnectionInterface $from, $data) {
     $this->logger->notice(
-        "Received an entity publish! " .
+        "Received an entity publish! ".
           "({$data['guid']}, {$data['event']}, {$from->resourceId})"
     );
 
@@ -422,7 +422,7 @@ class MessageHandler implements MessageComponentInterface {
             if (isset($current)) {
               // Notify subscriber.
               $this->logger->notice(
-                  "Notifying client of update! " .
+                  "Notifying client of update! ".
                     "({$curClient->resourceId})"
               );
               if (is_callable([$current, 'updateDataProtection'])
@@ -448,7 +448,7 @@ class MessageHandler implements MessageComponentInterface {
 
               // Notify subscriber.
               $this->logger->notice(
-                  "Notifying client of removal! " .
+                  "Notifying client of removal! ".
                     "({$curClient->resourceId})"
               );
               $curClient->send(json_encode([
@@ -514,7 +514,7 @@ class MessageHandler implements MessageComponentInterface {
 
             // Notify client.
             $this->logger->notice(
-                "Notifying client of new match! " .
+                "Notifying client of new match! ".
                   "({$curClient->resourceId})"
             );
             if (is_callable([$current, 'updateDataProtection'])
@@ -545,12 +545,12 @@ class MessageHandler implements MessageComponentInterface {
    */
   private function handlePublishUid(ConnectionInterface $from, $data) {
     $this->logger->notice(
-        "Received a UID publish! (" .
+        "Received a UID publish! (".
           (
             isset($data['name'])
                 ? $data['name']
                 : "{$data['oldName']} => {$data['newName']}"
-          ) .
+          ).
           ", {$data['event']}, {$from->resourceId})"
     );
 
@@ -561,7 +561,7 @@ class MessageHandler implements MessageComponentInterface {
       }
       foreach ($this->uidSubs[$name] as $curClient) {
         $this->logger->notice(
-            "Notifying client of {$data['event']}! " .
+            "Notifying client of {$data['event']}! ".
               "($name, {$curClient->resourceId})"
         );
         $payload = [

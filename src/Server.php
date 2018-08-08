@@ -53,8 +53,8 @@ class Server {
       );
     } catch (\Exception $e) {
       if (strpos($e->getMessage(), 'date.timezone')) {
-        echo "It looks like you haven't set a default timezone. In order to " .
-            "avoid constant complaints from Zend's logger, I'm just going to " .
+        echo "It looks like you haven't set a default timezone. In order to ".
+            "avoid constant complaints from Zend's logger, I'm just going to ".
             "kill myself now.\n\n";
         echo $e->getMessage()."\n";
         exit;
