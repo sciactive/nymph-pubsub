@@ -196,11 +196,18 @@ class MessageHandler implements MessageComponentInterface {
       }
       $guidArgs = $args;
       $guidArgs[0]['return'] = 'guid';
-      $guidArgs[0]['source'] = 'pubsub';
+      $guidArgs[0]['source'] = 'client';
       if ($this->sessions->contains($from)) {
-        $guidArgs[0]['token'] = $this->sessions[$from];
+        $token = $this->sessions[$from];
       } else {
-        $guidArgs[0]['token'] = null;
+        $token = null;
+      }
+      if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+        $user = \Tilmeld\Tilmeld::extractToken($token);
+        if ($user) {
+          // Log in the user for access controls.
+          \Tilmeld\Tilmeld::fillSession($user);
+        }
       }
       $this->querySubs[$serialArgs]->attach($from, [
         'current' => call_user_func_array(
@@ -210,6 +217,10 @@ class MessageHandler implements MessageComponentInterface {
         'query' => $data['query'],
         'count' => !!$data['count']
       ]);
+      if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+        // Clear the user that was temporarily logged in.
+        \Tilmeld\Tilmeld::clearSession();
+      }
       $this->logger->notice(
           "Client subscribed to a query! ".
             "($serialArgs, {$from->resourceId})"
@@ -406,14 +417,20 @@ class MessageHandler implements MessageComponentInterface {
             // Update currents list.
             $queryArgs = unserialize($curQuery);
             $this->prepareSelectors($queryArgs);
-            $queryArgs[0]['source'] = 'pubsub';
+            $queryArgs[0]['source'] = 'client';
+            $queryArgs[] = ['&', 'guid' => $data['guid']];
             if ($this->sessions->contains($curClient)) {
               $token = $this->sessions[$curClient];
             } else {
               $token = null;
             }
-            $queryArgs[0]['token'] = $token;
-            $queryArgs[] = ['&', 'guid' => $data['guid']];
+            if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+              $user = \Tilmeld\Tilmeld::extractToken($token);
+              if ($user) {
+                // Log in the user for access controls.
+                \Tilmeld\Tilmeld::fillSession($user);
+              }
+            }
             $current = call_user_func_array(
                 "\Nymph\Nymph::getEntity",
                 $queryArgs
@@ -425,14 +442,8 @@ class MessageHandler implements MessageComponentInterface {
                   "Notifying client of update! ".
                     "({$curClient->resourceId})"
               );
-              if (is_callable([$current, 'updateDataProtection'])
-                  && class_exists('\Tilmeld\Tilmeld')
-                  && isset($token)
-                ) {
-                $user = \Tilmeld\Tilmeld::extractToken($token);
-                if ($user) {
-                  $current->updateDataProtection($user);
-                }
+              if (is_callable([$current, 'updateDataProtection'])) {
+                $current->updateDataProtection();
               }
               $curClient->send(json_encode([
                 'query' => $curData['query'],
@@ -455,6 +466,11 @@ class MessageHandler implements MessageComponentInterface {
                 'query' => $curData['query'],
                 'removed' => $data['guid']
               ]));
+            }
+
+            if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+              // Clear the user that was temporarily logged in.
+              \Tilmeld\Tilmeld::clearSession();
             }
 
             $updatedClients->attach($curClient);
@@ -485,52 +501,57 @@ class MessageHandler implements MessageComponentInterface {
           // It does match the query.
           foreach ($curClients as $curClient) {
             if ($updatedClients->contains($curClient)) {
+              // The user was already notified. (Of an update.)
               continue;
             }
 
             // Check that the user can access the entity.
             $queryArgs = unserialize($curQuery);
             $this->prepareSelectors($queryArgs);
-            $queryArgs[0]['source'] = 'pubsub';
+            $queryArgs[0]['source'] = 'client';
+            $queryArgs[] = ['&', 'guid' => $data['guid']];
             if ($this->sessions->contains($curClient)) {
               $token = $this->sessions[$curClient];
             } else {
               $token = null;
             }
-            $queryArgs[0]['token'] = $token;
-            $queryArgs[] = ['&', 'guid' => $data['guid']];
+            if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+              $user = \Tilmeld\Tilmeld::extractToken($token);
+              if ($user) {
+                // Log in the user for access controls.
+                \Tilmeld\Tilmeld::fillSession($user);
+              }
+            }
             $current = call_user_func_array(
                 "\Nymph\Nymph::getEntity",
                 $queryArgs
             );
-            if (!isset($current)) {
-              continue;
-            }
 
-            // Update the currents list.
-            $curData = $curClients[$curClient];
-            $curData['current'][] = $data['guid'];
-            $curClients->attach($curClient, $curData);
+            if (isset($current)) {
+              // Update the currents list.
+              $curData = $curClients[$curClient];
+              $curData['current'][] = $data['guid'];
+              $curClients->attach($curClient, $curData);
 
-            // Notify client.
-            $this->logger->notice(
-                "Notifying client of new match! ".
-                  "({$curClient->resourceId})"
-            );
-            if (is_callable([$current, 'updateDataProtection'])
-                && class_exists('\Tilmeld\Tilmeld')
-                && isset($token)
-              ) {
-              $user = \Tilmeld\Tilmeld::extractToken($token);
-              if ($user) {
-                $current->updateDataProtection($user);
+              // Notify client.
+              $this->logger->notice(
+                  "Notifying client of new match! ".
+                    "({$curClient->resourceId})"
+              );
+              if (is_callable([$current, 'updateDataProtection'])) {
+                $current->updateDataProtection();
               }
+              $curClient->send(json_encode([
+                'query' => $curData['query'],
+                'added' => $data['guid'],
+                'data' => $current
+              ]));
             }
-            $curClient->send(json_encode([
-              'query' => $curData['query'],
-              'added' => $data['guid'],
-              'data' => $current
-            ]));
+
+            if (class_exists('\Tilmeld\Tilmeld') && isset($token)) {
+              // Clear the user that was temporarily logged in.
+              \Tilmeld\Tilmeld::clearSession();
+            }
           }
         }
       }
