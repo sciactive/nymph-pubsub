@@ -65,31 +65,38 @@ class MessageHandler implements MessageComponentInterface {
     $this->logger->notice("Client skedaddled. ({$conn->resourceId})");
 
     $mess = 0;
-    foreach ($this->querySubs as $curQuery => $curClients) {
-      if ($curClients->contains($conn)) {
-        $curClients->detach($conn);
+    foreach ($this->querySubs as $curEtype => &$curSubscriptions) {
+      foreach ($curSubscriptions as $curQuery => &$curClients) {
+        if ($curClients->contains($conn)) {
+          $curClients->detach($conn);
 
-        $count = count($curClients);
+          $count = count($curClients);
 
-        if ($count === 0) {
-          unset($this->querySubs[$curQuery]);
-        } else {
-          if (Server::$config['broadcast_counts']) {
-            // Notify clients of the subscription count.
-            foreach ($curClients as $key) {
-              $curData = $curClients[$key];
-              if ($curData['count']) {
-                $key->send(json_encode([
-                  'query' => $curData['query'],
-                  'count' => $count
-                ]));
+          if ($count === 0) {
+            unset($curSubscriptions[$curQuery]);
+            if (count($this->querySubs[$curEtype]) === 0) {
+              unset($this->querySubs[$curEtype]);
+            }
+          } else {
+            if (Server::$config['broadcast_counts']) {
+              // Notify clients of the subscription count.
+              foreach ($curClients as $key) {
+                $curData = $curClients[$key];
+                if ($curData['count']) {
+                  $key->send(json_encode([
+                    'query' => $curData['query'],
+                    'count' => $count
+                  ]));
+                }
               }
             }
           }
+          $mess++;
         }
-        $mess++;
       }
+      unset($curClients);
     }
+    unset($curSubscriptions);
 
     foreach ($this->uidSubs as $curUID => $curClients) {
       if ($curClients->contains($conn)) {
@@ -186,13 +193,17 @@ class MessageHandler implements MessageComponentInterface {
         $args[$i] = $newArg;
       }
     }
+    $etype = $args[0]['class']::ETYPE;
     $serialArgs = serialize($args);
     $this->prepareSelectors($args);
 
     if ($data['action'] === 'subscribe') {
       // Client is subscribing to a query.
-      if (!key_exists($serialArgs, $this->querySubs)) {
-        $this->querySubs[$serialArgs] = new \SplObjectStorage();
+      if (!key_exists($etype, $this->querySubs)) {
+        $this->querySubs[$etype] = [];
+      }
+      if (!key_exists($serialArgs, $this->querySubs[$etype])) {
+        $this->querySubs[$etype][$serialArgs] = new \SplObjectStorage();
       }
       $guidArgs = $args;
       $guidArgs[0]['return'] = 'guid';
@@ -209,7 +220,7 @@ class MessageHandler implements MessageComponentInterface {
           \Tilmeld\Tilmeld::fillSession($user);
         }
       }
-      $this->querySubs[$serialArgs]->attach($from, [
+      $this->querySubs[$etype][$serialArgs]->attach($from, [
         'current' => call_user_func_array(
             "\Nymph\Nymph::getEntities",
             $guidArgs
@@ -228,9 +239,9 @@ class MessageHandler implements MessageComponentInterface {
 
       if (Server::$config['broadcast_counts']) {
         // Notify clients of the subscription count.
-        $count = count($this->querySubs[$serialArgs]);
-        foreach ($this->querySubs[$serialArgs] as $key) {
-          $curData = $this->querySubs[$serialArgs][$key];
+        $count = count($this->querySubs[$etype][$serialArgs]);
+        foreach ($this->querySubs[$etype][$serialArgs] as $key) {
+          $curData = $this->querySubs[$etype][$serialArgs][$key];
           if ($curData['count']) {
             $key->send(json_encode([
               'query' => $curData['query'],
@@ -243,30 +254,36 @@ class MessageHandler implements MessageComponentInterface {
 
     if ($data['action'] === 'unsubscribe') {
       // Client is unsubscribing from a query.
-      if (!key_exists($serialArgs, $this->querySubs)) {
+      if (!key_exists($etype, $this->querySubs)) {
         return;
       }
-      if (!$this->querySubs[$serialArgs]->contains($from)) {
+      if (!key_exists($serialArgs, $this->querySubs[$etype])) {
         return;
       }
-      $this->querySubs[$serialArgs]->detach($from);
+      if (!$this->querySubs[$etype][$serialArgs]->contains($from)) {
+        return;
+      }
+      $this->querySubs[$etype][$serialArgs]->detach($from);
       $this->logger->notice(
           "Client unsubscribed from a query! ".
             "($serialArgs, {$from->resourceId})"
       );
 
-      $count = count($this->querySubs[$serialArgs]);
+      $count = count($this->querySubs[$etype][$serialArgs]);
 
       if ($count === 0) {
         // No more subscribed clients.
-        unset($this->querySubs[$serialArgs]);
+        unset($this->querySubs[$etype][$serialArgs]);
+        if (count($this->querySubs[$etype])) {
+          unset($this->querySubs[$etype]);
+        }
         return;
       }
 
       if (Server::$config['broadcast_counts']) {
         // Notify clients of the subscription count.
-        foreach ($this->querySubs[$serialArgs] as $key) {
-          $curData = $this->querySubs[$serialArgs][$key];
+        foreach ($this->querySubs[$etype][$serialArgs] as $key) {
+          $curData = $this->querySubs[$etype][$serialArgs][$key];
           if ($curData['count']) {
             $key->send(json_encode([
               'query' => $curData['query'],
@@ -406,7 +423,9 @@ class MessageHandler implements MessageComponentInterface {
           "({$data['guid']}, {$data['event']}, {$from->resourceId})"
     );
 
-    foreach ($this->querySubs as $curQuery => $curClients) {
+    $etype = $data['etype'];
+
+    foreach ($this->querySubs[$etype] as $curQuery => $curClients) {
       $updatedClients = new \SplObjectStorage();
 
       if ($data['event'] === 'delete' || $data['event'] === 'update') {

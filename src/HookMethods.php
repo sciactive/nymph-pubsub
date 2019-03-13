@@ -15,6 +15,10 @@ class HookMethods {
         function (&$arguments, $name, &$object, &$function, &$data) {
           $data['entity'] = &$arguments[0];
           $data['guid'] = $arguments[0]->guid;
+          $className = is_callable([$arguments[0], '_hookObject'])
+              ? get_class($arguments[0]->_hookObject())
+              : get_class($arguments[0]);
+          $data['etype'] = $className::ETYPE;
         }
     );
     Hook::addCallback(
@@ -30,7 +34,8 @@ class HookMethods {
                 ? 'update'
                 : 'create',
             'guid' => $data['entity']->guid,
-            'entity' => $data['entity']->jsonSerialize(false)
+            'entity' => $data['entity']->jsonSerialize(false),
+            'etype' => $data['etype']
           ]));
         }
     );
@@ -39,6 +44,10 @@ class HookMethods {
         -10,
         function (&$arguments, $name, &$object, &$function, &$data) {
           $data['guid'] = $arguments[0]->guid;
+          $className = is_callable([$arguments[0], '_hookObject'])
+              ? get_class($arguments[0]->_hookObject())
+              : get_class($arguments[0]);
+          $data['etype'] = $className::ETYPE;
         }
     );
     Hook::addCallback(
@@ -51,7 +60,8 @@ class HookMethods {
           HookMethods::sendMessage(json_encode([
             'action' => 'publish',
             'event' => 'delete',
-            'guid' => $data['guid']
+            'guid' => $data['guid'],
+            'etype' => $data['etype']
           ]));
         }
     );
@@ -60,6 +70,7 @@ class HookMethods {
         -10,
         function (&$arguments, $name, &$object, &$function, &$data) {
           $data['guid'] = $arguments[0];
+          $data['etype'] = $arguments[1]::ETYPE;
         }
     );
     Hook::addCallback(
@@ -72,7 +83,8 @@ class HookMethods {
           HookMethods::sendMessage(json_encode([
             'action' => 'publish',
             'event' => 'delete',
-            'guid' => $data['guid']
+            'guid' => $data['guid'],
+            'etype' => $data['etype']
           ]));
         }
     );
