@@ -1,7 +1,7 @@
 {
   "name": "sciactive/nymph-pubsub",
   "description": "A library for publishing/subscribing to Nymph database changes.",
-  "version": "3.0.0-beta.7",
+  "version": "3.0.0-beta.8",
   "time": "2019-05-02",
   "homepage": "http://nymph.io/",
   "type": "library",
