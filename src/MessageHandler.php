@@ -277,7 +277,7 @@ class MessageHandler implements MessageComponentInterface {
       if ($count === 0) {
         // No more subscribed clients.
         unset($this->querySubs[$etype][$serialArgs]);
-        if (count($this->querySubs[$etype])) {
+        if (count($this->querySubs[$etype]) === 0) {
           unset($this->querySubs[$etype]);
         }
         return;
@@ -514,7 +514,9 @@ class MessageHandler implements MessageComponentInterface {
         $entityData['mdate'] = $data['entity']['mdate'];
         $entitySData = [];
 
-        if ($options['class'] === $data['entity']['class']
+        if (class_exists($options['class'])
+            && class_exists($data['entity']['class'])
+            && $options['class']::ETYPE === $data['entity']['class']::ETYPE
             && \Nymph\Nymph::checkData(
                 $entityData,
                 $entitySData,
