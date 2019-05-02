@@ -425,6 +425,10 @@ class MessageHandler implements MessageComponentInterface {
 
     $etype = $data['etype'];
 
+    if (!key_exists($etype, $this->querySubs)) {
+      return;
+    }
+
     foreach ($this->querySubs[$etype] as $curQuery => $curClients) {
       $updatedClients = new \SplObjectStorage();
 
