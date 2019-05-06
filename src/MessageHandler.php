@@ -2,7 +2,6 @@
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-use WebSocket\Client as TextalkWebSocketClient;
 
 /**
  * Handle subscriptions and publications.
@@ -634,8 +633,12 @@ class MessageHandler implements MessageComponentInterface {
     }
 
     foreach (Server::$config['relays'] as $host) {
-      $client = new TextalkWebSocketClient($host);
-      $client->send($message);
+      \Ratchet\Client\connect($host)->then(function($conn) use ($message) {
+        $conn->send($message);
+        $conn->close();
+      }, function ($e) {
+        $this->logger->error("Could not connect to PubSub relay: {$e->getMessage()}");
+      });
     }
   }
 

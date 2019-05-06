@@ -1,7 +1,6 @@
 <?php namespace Nymph\PubSub;
 
 use SciActive\Hook;
-use WebSocket\Client as TextalkWebSocketClient;
 
 class HookMethods {
   public static function setup() {
@@ -181,8 +180,12 @@ class HookMethods {
 
   public static function sendMessage($message) {
     foreach (Server::$config['entries'] as $host) {
-      $client = new TextalkWebSocketClient($host);
-      $client->send($message);
+      \Ratchet\Client\connect($host)->then(function($conn) use ($message) {
+        $conn->send($message);
+        $conn->close();
+      }, function ($e) {
+        error_log("Could not connect to PubSub: {$e->getMessage()}");
+      });
     }
   }
 }

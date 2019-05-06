@@ -45,7 +45,7 @@
     "sciactive/hookphp": "^2.0",
     "cboden/ratchet": "0.4.*",
     "zendframework/zend-log": "2.*",
-    "textalk/websocket": "1.2.*"
+    "ratchet/pawl": "^0.3.4"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "3.*"
