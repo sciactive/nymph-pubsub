@@ -2,19 +2,15 @@
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/sciactive/nymph-pubsub.svg)](https://packagist.org/packages/sciactive/nymph-pubsub) [![Open Issues](https://img.shields.io/github/issues/sciactive/nymph-pubsub.svg)](https://github.com/sciactive/nymph-pubsub/issues) [![License](https://img.shields.io/github/license/sciactive/nymph-pubsub.svg)]()
 
-Nymph is an object data store that is easy to use in JavaScript and PHP.
+Nymph is an object data store for JavaScript and PHP.
 
 ## Installation
 
 ### Automatic Setup
 
-The fastest way to start building a Nymph app is with the Nymph App Template.
-
-[Nymph App Template](https://github.com/hperrin/nymph-template)
+The fastest way to start building a Nymph app is with the [Nymph App Template](https://github.com/hperrin/nymph-template).
 
 ### Manual Installation
-
-You can install Nymph PubSub Server with Composer.
 
 ```sh
 composer require sciactive/nymph-pubsub
@@ -22,13 +18,8 @@ composer require sciactive/nymph-pubsub
 
 This repository is the PHP publish/subscribe server. For more information, you can see the [main Nymph repository](https://github.com/sciactive/nymph).
 
-## Setting up a Nymph PubSub server
+## Usage
 
-<div dir="rtl">Quick Setup with Composer</div>
-
-```sh
-composer require sciactive/nymph-pubsub
-```
 ```php
 // pubsub.php: Start with `php pubsub.php [-d]`
 
@@ -58,10 +49,6 @@ Nymph::configure([
 
 \Nymph\Nymph::connect();
 
-// Load all the entities that will be accessible in this server.
-require 'MyEntityA.php';
-require 'MyEntityB.php';
-
 // Allow this file to be called with "-d" to daemonize it.
 if (in_array('-d', $argv)) {
   function shutdown() {
@@ -79,7 +66,7 @@ if (in_array('-d', $argv)) {
 }
 
 // Set up Nymph PubSub.
-$config = include(__DIR__.'/config.php');
+$config = include(__DIR__.'/pubsub-config.php');
 $config['port'] = 8080;
 $config['relays'] = [
   'ws://pubsubnetwork1endpoint1:8080/',
@@ -91,7 +78,7 @@ $server = new \Nymph\PubSub\Server($config);
 $server->run();
 ```
 ```php
-// config.php
+// pubsub-config.php
 
 // This config file tells Nymph to publish entity updates to these network entry
 // points. They will then relay the publish to their network.
@@ -106,7 +93,7 @@ return [
 ```
 ```php
 // somewhere in your Nymph rest endpoint.
-$config = include('path/to/pubsub/config.php');
+$config = include('path/to/pubsub/pubsub-config.php');
 \Nymph\PubSub\Server::configure($config);
 ```
 
