@@ -4,6 +4,10 @@
 
 Powerful object data storage and querying for collaborative web apps.
 
+## Deprecation Notice
+
+The PHP implementation of Nymph/Tilmeld has been deprecated. It will no longer have any new features added. Instead, a new version of Nymph running on Node.js, written entirely in TypeScript will replace the PHP implementation. You can find it over at the [Nymph.js repo](https://github.com/sciactive/nymphjs).
+
 ## Installation
 
 ### Automatic Setup
@@ -77,6 +81,7 @@ $server = new \Nymph\PubSub\Server($config);
 // Run the server.
 $server->run();
 ```
+
 ```php
 // pubsub-config.php
 
@@ -91,6 +96,7 @@ return [
   ]
 ];
 ```
+
 ```php
 // somewhere in your Nymph rest endpoint.
 $config = include('path/to/pubsub/pubsub-config.php');
